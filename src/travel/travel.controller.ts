@@ -32,7 +32,7 @@ import { CreatePostDto } from '../post/dto/create-post.dto';
 import { PostService } from '../post/post.service';
 import { TravelFriendAndOwnerGuard } from '../common/guards/travel-friend-and-owner.guard';
 
-@Controller('/api/travel')
+@Controller('/travel')
 @UseGuards(JwtAuthGuard)
 export class TravelController {
   constructor(

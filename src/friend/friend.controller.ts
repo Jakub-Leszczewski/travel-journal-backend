@@ -1,8 +1,8 @@
-import { Controller, Body, Patch, Param, Delete, Inject, forwardRef } from '@nestjs/common';
+import { Controller, Patch, Param, Delete, Inject, forwardRef } from '@nestjs/common';
 import { FriendService } from './friend.service';
 import { DeleteFriendResponse, UpdateFriendResponse } from '../types';
 
-@Controller('/api/friend')
+@Controller('/friend')
 export class FriendController {
   constructor(
     @Inject(forwardRef(() => FriendService)) private readonly friendService: FriendService,

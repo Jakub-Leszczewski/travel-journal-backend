@@ -23,7 +23,7 @@ import {
 } from '../types';
 import { UserService } from '../user/user.service';
 
-@Controller('/api/auth')
+@Controller('/auth')
 export class AuthController {
   constructor(
     @Inject(forwardRef(() => AuthService)) private authService: AuthService,

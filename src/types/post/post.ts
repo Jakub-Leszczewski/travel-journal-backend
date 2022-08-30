@@ -1,3 +1,5 @@
+import { TravelInterface } from '../travel';
+
 export interface PostInterface {
   id: string;
   title: string;
@@ -5,9 +7,10 @@ export interface PostInterface {
   description: string;
   createdAt: Date;
   photoFn: string;
+  travel: TravelInterface;
 }
 
-export type PostSaveResponseData = Omit<PostInterface, 'photoFn'> & {
+export type PostSaveResponseData = Omit<PostInterface, 'photoFn' | 'travel'> & {
   photo: string;
   authorId: string;
   travelId: string;

@@ -75,7 +75,7 @@ export class UserService {
 
     const postsFiltered = posts.map((post) => {
       const { travel } = post;
-      const { user } = travel;
+      const { user, posts } = travel;
 
       return {
         ...this.postService.filter(post),
@@ -210,10 +210,9 @@ export class UserService {
     };
   }
 
-  async searchUser(
+  async searchNewFriends(
     id: string | undefined,
     search: string,
-    withFriends: boolean,
     page = 1,
   ): Promise<GetUserSearchResponse> {
     if (!search || search.length < 2)

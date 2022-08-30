@@ -41,7 +41,7 @@ import { FriendService } from '../friend/friend.service';
 import { UserFriendAndOwnerGuard } from '../common/guards/user-friend-and-owner.guard';
 import { UserOwnerGuard } from '../common/guards/user-owner.guard';
 
-@Controller('/api/user')
+@Controller('/user')
 export class UserController {
   constructor(
     @Inject(forwardRef(() => UserService)) private userService: UserService,
@@ -73,15 +73,14 @@ export class UserController {
     return this.userService.getIndex(id, page || 1);
   }
 
-  @Get('/:id/search')
+  @Get('/:id/friend/search')
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
-  async searchUser(
+  async searchNewFriends(
     @Param('id') id: string,
     @Query('search') search: string,
-    @Query('friends') friends: boolean,
     @Query('page') page: number,
   ): Promise<GetUserSearchResponse> {
-    return this.userService.searchUser(id, search, friends, page || 1);
+    return this.userService.searchNewFriends(id, search, page || 1);
   }
 
   @Delete('/:id')

@@ -184,7 +184,7 @@ export class TravelService {
   }
 
   filter(travel: Travel): TravelSaveResponseData {
-    const { photoFn, user, ...travelResponse } = travel;
+    const { photoFn, user, posts, ...travelResponse } = travel;
 
     return {
       ...travelResponse,
