@@ -111,31 +111,6 @@ export class FriendService {
     return this.getFriendshipTwoSite(friendship.user.id, friendship.friend.id);
   }
 
-  async getFriendsIdByUserId(id: string, statusObj?: StatusObj) {
-    if (!id) throw new Error('user id is empty');
-
-    const activeStatus = Object.entries(
-      statusObj ?? {
-        waiting: true,
-        accepted: true,
-        invitation: true,
-      },
-    )
-      .filter((e) => e[1])
-      .map((e) => e[0]);
-
-    return (
-      await this.dataSource
-        .createQueryBuilder()
-        .select(['friend.id', 'userFriend.id'])
-        .from(Friend, 'friend')
-        .leftJoin('friend.friend', 'userFriend')
-        .where('userFriend.id=:id', { id })
-        .andWhere('friend.status IN (:...status)', { status: [...activeStatus] })
-        .getMany()
-    ).map((e) => e.friend.id);
-  }
-
   async create(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendResponse> {
     const friendshipExist = await this.checkFriendshipExist(userId, friendId);
     if (friendshipExist) throw new ConflictException();

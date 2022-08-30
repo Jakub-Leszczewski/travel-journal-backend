@@ -223,20 +223,27 @@ export class UserService {
         totalUsersCount: 0,
       };
 
-    const friendsId = await this.friendService.getFriendsIdByUserId(id, {
-      waiting: !withFriends,
-      invitation: !withFriends,
-      accepted: !withFriends,
-    });
-
     const [users, totalUsersCount] = await this.dataSource
       .createQueryBuilder()
       .select(['user'])
       .from(User, 'user')
       .where('user.username LIKE :search', { search: `%${search ?? ''}%` })
-      .andWhere('NOT user.id IN (:...friendsId)', {
-        friendsId: [...(friendsId.length ? friendsId : ['null'])],
-      })
+      .andWhere(
+        new Brackets((qb) =>
+          qb.where((qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select(['friend.id'])
+              .from(User, 'friend')
+              .leftJoin('friend.friendsRevert', 'friendship')
+              .leftJoin('friendship.user', 'user')
+              .where('user.id=:id', { id })
+              .getQuery();
+
+            return 'NOT user.id IN' + subQuery;
+          }),
+        ),
+      )
       .andWhere('user.id <> :id', { id })
       .skip(config.itemsCountPerPage * (page - 1))
       .take(config.itemsCountPerPage)
