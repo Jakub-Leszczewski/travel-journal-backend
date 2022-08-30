@@ -1,7 +1,6 @@
 import { BaseEntity, Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { UserInterface } from '../../types';
 import { Travel } from '../../travel/entities/travel.entity';
-import { Post } from '../../post/entities/post.entity';
 import { Friend } from '../../friend/entities/friend.entity';
 
 @Entity()
