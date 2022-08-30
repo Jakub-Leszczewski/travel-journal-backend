@@ -51,7 +51,7 @@ export class PostController {
 
   @Get('/photo/:id')
   @UseGuards(PostFriendAndOwnerGuard)
-  @Header('Content-Type', 'image/png')
+  @Header('Content-Type', 'image/webp')
   @Header('cross-origin-resource-policy', 'cross-origin')
   async getPhoto(@Param('id') id: string): Promise<ReadStream> {
     return this.postService.getPhoto(id);

@@ -13,6 +13,7 @@ import { compare } from 'bcrypt';
 import {
   CreateUserResponse,
   DeleteUserResponse,
+  FriendStatus,
   GetUserIndexResponse,
   GetUserResponse,
   GetUserSearchResponse,
@@ -25,7 +26,7 @@ import { FileManagementUser } from '../common/utils/file-management/file-managem
 import { UserHelperService } from './user-helper.service';
 import { TravelService } from '../travel/travel.service';
 import { PostService } from '../post/post.service';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 import { Post } from '../post/entities/post.entity';
 import { config } from '../config/config';
 import { createReadStream } from 'fs';
@@ -43,17 +44,29 @@ export class UserService {
   ) {}
 
   async getIndex(id: string, page = 1): Promise<GetUserIndexResponse> {
-    const friendsId = await this.friendService.getFriendsIdByUserId(id, { accepted: true });
-
     const [posts, totalPostsCount] = await this.dataSource
       .createQueryBuilder()
       .select(['post', 'travel', 'user'])
       .from(Post, 'post')
       .leftJoin('post.travel', 'travel')
       .leftJoin('travel.user', 'user')
-      .where('user.id IN (:...friendsId)', {
-        friendsId: [...(friendsId.length ? friendsId : ['null'])],
-      })
+      .where(
+        new Brackets((qb) =>
+          qb.where((qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select(['friend.id'])
+              .from(User, 'friend')
+              .leftJoin('friend.friendsRevert', 'friendship')
+              .leftJoin('friendship.user', 'user')
+              .where('user.id=:id', { id })
+              .andWhere('friendship.status = :status', { status: FriendStatus.Accepted })
+              .getQuery();
+
+            return 'user.id IN' + subQuery;
+          }),
+        ),
+      )
       .orWhere('user.id=:id', { id })
       .orderBy('post.createdAt', 'DESC')
       .skip(config.itemsCountPerPage * (page - 1))

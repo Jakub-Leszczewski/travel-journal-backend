@@ -130,7 +130,7 @@ export class FriendService {
         .select(['friend.id', 'userFriend.id'])
         .from(Friend, 'friend')
         .leftJoin('friend.friend', 'userFriend')
-        .where('friend.userId=:id', { id })
+        .where('userFriend.id=:id', { id })
         .andWhere('friend.status IN (:...status)', { status: [...activeStatus] })
         .getMany()
     ).map((e) => e.friend.id);

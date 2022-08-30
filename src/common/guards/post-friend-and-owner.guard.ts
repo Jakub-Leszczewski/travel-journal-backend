@@ -10,6 +10,7 @@ import { User } from '../../user/entities/user.entity';
 import { DataSource } from 'typeorm';
 import { Post } from '../../post/entities/post.entity';
 import { Friend } from '../../friend/entities/friend.entity';
+import { FriendStatus } from '../../types';
 
 export class PostFriendAndOwnerGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
@@ -38,11 +39,10 @@ export class PostFriendAndOwnerGuard implements CanActivate {
       .select(['friend.id', 'userFriend.id'])
       .from(Friend, 'friend')
       .leftJoin('friend.friend', 'userFriend')
-      .where('friend.userId=:id AND friend.status="accepted"', {
-        id: postSimple.travel.user.id,
-      })
+      .where('friend.userId=:id', { id: postSimple.travel.user.id })
+      .andWhere('friend.status=:status', { status: FriendStatus.Accepted })
       .getOne();
 
-    return postSimple.travel.user.id === user.id || user.id === friend.friend.id;
+    return postSimple.travel.user.id === user.id || user.id === friend?.friend.id;
   }
 }
