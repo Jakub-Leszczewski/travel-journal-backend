@@ -70,7 +70,7 @@ export class UserController {
     @Param('id') id: string,
     @Query('page') page: number,
   ): Promise<GetUserIndexResponse> {
-    return this.userService.getIndex(id, page || 1);
+    return this.userService.getUserIndex(id, page || 1);
   }
 
   @Get('/:id/friend/search')

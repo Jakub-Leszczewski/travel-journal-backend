@@ -16,7 +16,6 @@ import {
   FriendStatus,
   GetUserIndexResponse,
   GetUserResponse,
-  GetUserSearchResponse,
   GetUserStatsResponse,
   UpdateUserResponse,
 } from '../types';
@@ -43,7 +42,9 @@ export class UserService {
     @Inject(DataSource) private dataSource: DataSource,
   ) {}
 
-  async getIndex(id: string, page = 1): Promise<GetUserIndexResponse> {
+  async getUserIndex(id: string, page = 1): Promise<GetUserIndexResponse> {
+    if (!id) throw new BadRequestException();
+
     const [posts, totalPostsCount] = await this.dataSource
       .createQueryBuilder()
       .select(['post', 'travel', 'user'])

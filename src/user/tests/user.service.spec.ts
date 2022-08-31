@@ -4,6 +4,9 @@ import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { DataSource } from 'typeorm';
 import { PostService } from '../../post/post.service';
 import { config } from '../../config/config';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { User } from '../entities/user.entity';
+import { UserHelperService } from '../user-helper.service';
 
 const moduleMocker = new ModuleMocker(global);
 const ownerId = 'abc';
@@ -28,7 +31,6 @@ describe('UserService', () => {
             from: () => createQueryBuilder,
             leftJoin: () => createQueryBuilder,
             addSelect: () => createQueryBuilder,
-            groupBy: () => createQueryBuilder,
             orderBy: () => createQueryBuilder,
             where: () => createQueryBuilder,
             orWhere: () => createQueryBuilder,
@@ -44,6 +46,12 @@ describe('UserService', () => {
           return {
             filterForeignPost(travel) {
               return { user: { id: travel.user.id } };
+            },
+          };
+        } else if (token === UserHelperService) {
+          return {
+            filter(user: User) {
+              return { id: user.id };
             },
           };
         } else if (typeof token === 'function') {
@@ -62,11 +70,38 @@ describe('UserService', () => {
   });
 
   it('should return index page data', async () => {
-    const data = await service.getIndex('abc', 1);
+    const data = await service.getUserIndex('abc', 1);
 
-    expect(data.posts.length).toBe(4);
+    expect(data.posts.length).toBe(postsArr.length);
     expect(data.posts[0].user.id).toBe(ownerId);
     expect(data.totalPages).toBe(Math.ceil(data.posts.length / config.itemsCountPerPage));
-    expect(data.totalPostsCount).toBe(4);
+    expect(data.totalPostsCount).toBe(postsArr.length);
+  });
+
+  it('if id is empty should throw bad request exception', async () => {
+    await expect(async () => service.getUserIndex('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('findOne should throw bad request error if id is empty', async () => {
+    await expect(async () => service.findOne('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('findOne should return data', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      const user = new User();
+      user.id = options.where.id;
+
+      return user;
+    });
+    const result = await service.findOne('abc');
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe('abc');
+  });
+
+  it('findOne should throw not found error', async () => {
+    jest.spyOn(User, 'findOne').mockResolvedValue(null);
+
+    await expect(async () => service.findOne('abc')).rejects.toThrowError(NotFoundException);
   });
 });
