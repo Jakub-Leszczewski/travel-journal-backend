@@ -4,9 +4,15 @@ import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { DataSource } from 'typeorm';
 import { PostService } from '../../post/post.service';
 import { config } from '../../config/config';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { User } from '../entities/user.entity';
 import { UserHelperService } from '../user-helper.service';
+import { FileManagementUser } from '../../common/utils/file-management/file-management-user';
 
 const moduleMocker = new ModuleMocker(global);
 const ownerId = 'abc';
@@ -51,7 +57,15 @@ describe('UserService', () => {
         } else if (token === UserHelperService) {
           return {
             filter(user: User) {
-              return { id: user.id };
+              return {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                bio: user.bio,
+              };
+            },
+            checkUserFieldUniquenessAndThrow: async (data) => {
+              if (data?.username === 'abc' || data?.email === 'abc') throw new ConflictException();
             },
           };
         } else if (typeof token === 'function') {
@@ -63,6 +77,10 @@ describe('UserService', () => {
       .compile();
 
     service = module.get<UserService>(UserService);
+    jest.spyOn(FileManagementUser, 'removeUserPhoto').mockReturnValue(undefined);
+    jest.spyOn(FileManagementUser, 'saveUserPhoto').mockReturnValue({ filename: 'xyz' } as any);
+    jest.spyOn(FileManagementUser, 'removeFromTmp').mockReturnValue(undefined);
+    jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
   });
 
   it('should be defined', async () => {
@@ -78,7 +96,7 @@ describe('UserService', () => {
     expect(data.totalPostsCount).toBe(postsArr.length);
   });
 
-  it('if id is empty should throw bad request exception', async () => {
+  it('if id is empty should throw bad request error', async () => {
     await expect(async () => service.getUserIndex('')).rejects.toThrowError(BadRequestException);
   });
 
@@ -103,5 +121,106 @@ describe('UserService', () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
 
     await expect(async () => service.findOne('abc')).rejects.toThrowError(NotFoundException);
+  });
+
+  it('create should throw conflict username error', () => {
+    expect(async () =>
+      service.create({ username: 'abc', email: 'xyz' } as any, {} as any),
+    ).rejects.toThrowError(ConflictException);
+  });
+
+  it('create should throw conflict email error', () => {
+    expect(async () =>
+      service.create({ username: 'xyz', email: 'abc' } as any, {} as any),
+    ).rejects.toThrowError(ConflictException);
+  });
+
+  it('create should return new user', async () => {
+    const result = await service.create(
+      { username: 'xyz', email: 'xyz', password: 'abc' } as any,
+      { filename: 'xyz' } as any,
+    );
+    expect(result).toBeDefined();
+  });
+
+  it('update should throw bad request error', async () => {
+    await expect(async () => service.update('', {} as any, {} as any)).rejects.toThrowError(
+      BadRequestException,
+    );
+  });
+
+  it('update should throw not found error', async () => {
+    jest.spyOn(User, 'findOne').mockResolvedValue(null);
+    await expect(async () => service.update('abc', {} as any, {} as any)).rejects.toThrowError(
+      NotFoundException,
+    );
+  });
+
+  it('update should change name', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async () => {
+      const user = new User();
+      user.firstName = 'aaa';
+      user.lastName = 'aaa';
+      user.bio = 'aaa';
+      return user;
+    });
+
+    const newData = {
+      firstName: 'bbb',
+      lastName: 'bbb',
+    };
+    const result = await service.update('abc', newData as any, {} as any);
+
+    expect(result).toEqual({ ...newData, bio: 'aaa' });
+  });
+
+  it('update should change bio', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async () => {
+      const user = new User();
+      user.firstName = 'aaa';
+      user.lastName = 'aaa';
+      user.bio = 'aaa';
+      return user;
+    });
+
+    const newData = {
+      bio: 'bbb',
+    };
+    const result = await service.update('abc', newData as any, {} as any);
+
+    expect(result).toEqual({ ...newData, lastName: 'aaa', firstName: 'aaa' });
+  });
+
+  it('update should throw unauthorized while password is bad', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async () => {
+      const user = new User();
+      user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
+      return user;
+    });
+
+    await expect(
+      async () =>
+        await service.update(
+          'abc',
+          { password: 'Haslo1234', newPassword: 'Haslo1234' } as any,
+          {} as any,
+        ),
+    ).rejects.toThrowError(UnauthorizedException);
+  });
+
+  it('update should change password', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async () => {
+      const user = new User();
+      user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
+      return user;
+    });
+
+    const result = await service.update(
+      'abc',
+      { password: 'Haslo123', newPassword: 'Haslo1234' } as any,
+      {} as any,
+    );
+
+    await expect(result).toBeDefined();
   });
 });

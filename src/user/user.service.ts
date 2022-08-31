@@ -112,7 +112,6 @@ export class UserService {
       user.hashPwd = await createHashPwd(createUserDto.password);
 
       await user.save();
-
       if (file) {
         if (user.photoFn) {
           await FileManagementUser.removeUserPhoto(user.id, user.photoFn);
@@ -168,7 +167,6 @@ export class UserService {
 
         user.photoFn = newFile.filename;
       }
-
       await user.save();
 
       return this.userHelperService.filter(user);
