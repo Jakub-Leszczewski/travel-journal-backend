@@ -40,7 +40,7 @@ export class UserService {
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
     @Inject(forwardRef(() => PostService)) private postService: PostService,
-    @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
+    @Inject(DataSource) private dataSource: DataSource,
   ) {}
 
   async getIndex(id: string, page = 1): Promise<GetUserIndexResponse> {
@@ -73,16 +73,7 @@ export class UserService {
       .take(config.itemsCountPerPage)
       .getManyAndCount();
 
-    const postsFiltered = posts.map((post) => {
-      const { travel } = post;
-      const { user, posts } = travel;
-
-      return {
-        ...this.postService.filter(post),
-        travel: { ...this.travelService.filter(travel) },
-        user: { ...this.userHelperService.filterPublicData(user) },
-      };
-    });
+    const postsFiltered = posts.map((post) => this.postService.filterForeignPost(post));
 
     return {
       posts: postsFiltered,

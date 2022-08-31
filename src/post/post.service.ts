@@ -10,6 +10,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import {
   CreatePostResponse,
   DeletePostResponse,
+  ForeignPostSaveData,
   GetPostResponse,
   GetPostsResponse,
   PostSaveResponseData,
@@ -21,10 +22,16 @@ import { DataSource } from 'typeorm';
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
+import { TravelService } from '../travel/travel.service';
+import { UserHelperService } from '../user/user-helper.service';
 
 @Injectable()
 export class PostService {
-  constructor(@Inject(forwardRef(() => DataSource)) private dataSource: DataSource) {}
+  constructor(
+    @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
+    @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
+    @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
+  ) {}
 
   async findOne(id: string): Promise<GetPostResponse> {
     if (!id) throw new BadRequestException();
@@ -198,6 +205,18 @@ export class PostService {
       photo: `/post/photo/${postResponse.id}`,
       authorId: travel.user.id,
       travelId: travel.id,
+    };
+  }
+
+  filterForeignPost(post: Post): ForeignPostSaveData {
+    const { authorId, travelId, ...postData } = this.filter(post);
+    const { travel } = post;
+    const { user, posts } = travel;
+
+    return {
+      ...postData,
+      travel: { ...this.travelService.filter(travel) },
+      user: { ...this.userHelperService.filterPublicData(user) },
     };
   }
 }

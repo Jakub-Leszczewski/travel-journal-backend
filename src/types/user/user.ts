@@ -26,6 +26,8 @@ export type UserSaveResponseData = Omit<UserSaveData, 'photoFn' | 'jwtId'> & {
   avatar: string;
 };
 
-export type UserIndexSaveData = PostSaveResponseData & { travel: TravelSaveResponseData } & {
+export type ForeignPostSaveData = Omit<PostSaveResponseData, 'authorId' | 'travelId'> & {
+  travel: TravelSaveResponseData;
+} & {
   user: UserPublicDataInterface;
 };

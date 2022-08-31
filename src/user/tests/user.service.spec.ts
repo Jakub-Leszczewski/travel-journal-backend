@@ -1,11 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
-import { DataSource } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { Travel } from '../../travel/entities/travel.entity';
-import { TravelInterface } from '../../types';
 import { Post } from '../../post/entities/post.entity';
+import {
+  Column,
+  DataSource,
+  JoinTable,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { TravelService } from '../../travel/travel.service';
+import { ForeignPostSaveData } from '../../types';
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -19,27 +27,28 @@ userDataMock.bio = 'abc';
 userDataMock.photoFn = `/user/photo/abc`;
 userDataMock.hashPwd = 'abc';
 userDataMock.jwtId = 'abc';
+userDataMock.travels = [];
 
 const travelDataMock = new Travel();
-travelDataMock.comradesCount = 0;
+travelDataMock.id = '';
+travelDataMock.title = '';
 travelDataMock.description = '';
 travelDataMock.destination = '';
-travelDataMock.endAt = undefined;
-travelDataMock.id = '';
+travelDataMock.comradesCount = 0;
 travelDataMock.photoFn = '';
-travelDataMock.startAt = undefined;
-travelDataMock.title = '';
+travelDataMock.startAt = new Date();
+travelDataMock.endAt = new Date();
+travelDataMock.user = userDataMock;
+travelDataMock.posts = [];
 
 const postDataMock = new Post();
-const pos: Post = {
-  createdAt: undefined,
-  description: '',
-  destination: '',
-  id: '',
-  photoFn: '',
-  title: '',
-  travel: undefined,
-};
+postDataMock.id = '';
+postDataMock.title = '';
+postDataMock.description = '';
+postDataMock.destination = '';
+postDataMock.createdAt = undefined;
+postDataMock.photoFn = '';
+postDataMock.travel = travelDataMock;
 
 describe('UserService', () => {
   let service: UserService;
@@ -49,7 +58,45 @@ describe('UserService', () => {
       providers: [UserService],
     })
       .useMocker((token) => {
-        if (typeof token === 'function') {
+        if (token === DataSource) {
+          const postsArr = [postDataMock, postDataMock, postDataMock];
+
+          const createQueryBuilder = {
+            select: () => createQueryBuilder,
+            from: () => createQueryBuilder,
+            leftJoin: () => createQueryBuilder,
+            addSelect: () => createQueryBuilder,
+            groupBy: () => createQueryBuilder,
+            orderBy: () => createQueryBuilder,
+            where: () => createQueryBuilder,
+            orWhere: () => createQueryBuilder,
+            skip: () => createQueryBuilder,
+            take: () => createQueryBuilder,
+            getManyAndCount: async () => [postsArr, 3],
+          };
+
+          return {
+            createQueryBuilder: () => createQueryBuilder,
+          };
+        } else if (token === TravelService) {
+          return {
+            filter(): ForeignPostSaveData {
+              return {
+                id: '',
+                createdAt: undefined,
+                description: '',
+                destination: '',
+                photo: '',
+                title: '',
+                travelId: '',
+                travel: undefined,
+                authorId: '',
+                user: undefined,
+              };
+            },
+          };
+        } else if (token === TravelService) {
+        } else if (typeof token === 'function') {
           const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
           return new Mock();
@@ -64,7 +111,9 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  // if('should return index page data', () => {
-  //   jest.spyOn(DataSource.prototype, 'createQueryBuilder').mockResolvedValue([[], 3])
-  // })
+  it('should return index page data', () => {
+    const postsArr = [postDataMock, postDataMock, postDataMock];
+
+    expect(service.getIndex('abc', 1));
+  });
 });
