@@ -80,7 +80,7 @@ export class UserController {
     @Query('search') search: string,
     @Query('page') page: number,
   ): Promise<GetUserSearchResponse> {
-    return this.userService.searchNewFriends(id, search, page || 1);
+    return this.friendService.searchNewFriends(id, search, page || 1);
   }
 
   @Delete('/:id')

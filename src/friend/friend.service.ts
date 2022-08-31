@@ -14,13 +14,14 @@ import {
   FriendSaveResponseData,
   FriendStatus,
   GetFriendsResponse,
+  GetUserSearchResponse,
   UpdateFriendResponse,
 } from '../types';
 import { Friend } from './entities/friend.entity';
 import { User } from '../user/entities/user.entity';
 import { UserHelperService } from '../user/user-helper.service';
 import { config } from '../config/config';
-import { DataSource } from 'typeorm';
+import { Brackets, DataSource } from 'typeorm';
 
 interface StatusObj {
   waiting?: boolean;
@@ -164,6 +165,51 @@ export class FriendService {
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
     return !!(await this.getFriendshipTwoSite(userId, friendId));
+  }
+
+  async searchNewFriends(
+    id: string | undefined,
+    search: string,
+    page = 1,
+  ): Promise<GetUserSearchResponse> {
+    if (!search || search.length < 2)
+      return {
+        users: [],
+        totalPages: 0,
+        totalUsersCount: 0,
+      };
+
+    const [users, totalUsersCount] = await this.dataSource
+      .createQueryBuilder()
+      .select(['user'])
+      .from(User, 'user')
+      .where('user.username LIKE :search', { search: `%${search ?? ''}%` })
+      .andWhere(
+        new Brackets((qb) =>
+          qb.where((qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select(['friend.id'])
+              .from(User, 'friend')
+              .leftJoin('friend.friendsRevert', 'friendship')
+              .leftJoin('friendship.user', 'user')
+              .where('user.id=:id', { id })
+              .getQuery();
+
+            return 'NOT user.id IN' + subQuery;
+          }),
+        ),
+      )
+      .andWhere('user.id <> :id', { id })
+      .skip(config.itemsCountPerPage * (page - 1))
+      .take(config.itemsCountPerPage)
+      .getManyAndCount();
+
+    return {
+      users: users.map((e) => this.userHelperService.filterPublicData(e)),
+      totalPages: Math.ceil(totalUsersCount / config.itemsCountPerPage),
+      totalUsersCount,
+    };
   }
 
   filter(friendship: Friend): FriendSaveResponseData {

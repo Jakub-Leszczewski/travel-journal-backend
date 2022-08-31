@@ -201,51 +201,6 @@ export class UserService {
     };
   }
 
-  async searchNewFriends(
-    id: string | undefined,
-    search: string,
-    page = 1,
-  ): Promise<GetUserSearchResponse> {
-    if (!search || search.length < 2)
-      return {
-        users: [],
-        totalPages: 0,
-        totalUsersCount: 0,
-      };
-
-    const [users, totalUsersCount] = await this.dataSource
-      .createQueryBuilder()
-      .select(['user'])
-      .from(User, 'user')
-      .where('user.username LIKE :search', { search: `%${search ?? ''}%` })
-      .andWhere(
-        new Brackets((qb) =>
-          qb.where((qb) => {
-            const subQuery = qb
-              .subQuery()
-              .select(['friend.id'])
-              .from(User, 'friend')
-              .leftJoin('friend.friendsRevert', 'friendship')
-              .leftJoin('friendship.user', 'user')
-              .where('user.id=:id', { id })
-              .getQuery();
-
-            return 'NOT user.id IN' + subQuery;
-          }),
-        ),
-      )
-      .andWhere('user.id <> :id', { id })
-      .skip(config.itemsCountPerPage * (page - 1))
-      .take(config.itemsCountPerPage)
-      .getManyAndCount();
-
-    return {
-      users: users.map((e) => this.userHelperService.filterPublicData(e)),
-      totalPages: Math.ceil(totalUsersCount / config.itemsCountPerPage),
-      totalUsersCount,
-    };
-  }
-
   async getPhoto(id: string) {
     if (!id) throw new BadRequestException();
 
