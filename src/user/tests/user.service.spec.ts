@@ -1,54 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
-import { User } from '../entities/user.entity';
-import { Travel } from '../../travel/entities/travel.entity';
-import { Post } from '../../post/entities/post.entity';
-import {
-  Column,
-  DataSource,
-  JoinTable,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { TravelService } from '../../travel/travel.service';
-import { ForeignPostSaveData } from '../../types';
+import { DataSource } from 'typeorm';
+import { PostService } from '../../post/post.service';
+import { config } from '../../config/config';
 
 const moduleMocker = new ModuleMocker(global);
-
-const userDataMock = new User();
-userDataMock.id = 'abc';
-userDataMock.firstName = 'abc';
-userDataMock.lastName = 'abc';
-userDataMock.username = 'abc';
-userDataMock.email = 'abc@xyz.com';
-userDataMock.bio = 'abc';
-userDataMock.photoFn = `/user/photo/abc`;
-userDataMock.hashPwd = 'abc';
-userDataMock.jwtId = 'abc';
-userDataMock.travels = [];
-
-const travelDataMock = new Travel();
-travelDataMock.id = '';
-travelDataMock.title = '';
-travelDataMock.description = '';
-travelDataMock.destination = '';
-travelDataMock.comradesCount = 0;
-travelDataMock.photoFn = '';
-travelDataMock.startAt = new Date();
-travelDataMock.endAt = new Date();
-travelDataMock.user = userDataMock;
-travelDataMock.posts = [];
-
-const postDataMock = new Post();
-postDataMock.id = '';
-postDataMock.title = '';
-postDataMock.description = '';
-postDataMock.destination = '';
-postDataMock.createdAt = undefined;
-postDataMock.photoFn = '';
-postDataMock.travel = travelDataMock;
+const ownerId = 'abc';
+const postsArr = [
+  { user: { id: ownerId } },
+  { user: { id: ownerId } },
+  { user: { id: ownerId } },
+  { user: { id: ownerId } },
+];
 
 describe('UserService', () => {
   let service: UserService;
@@ -59,8 +23,6 @@ describe('UserService', () => {
     })
       .useMocker((token) => {
         if (token === DataSource) {
-          const postsArr = [postDataMock, postDataMock, postDataMock];
-
           const createQueryBuilder = {
             select: () => createQueryBuilder,
             from: () => createQueryBuilder,
@@ -72,30 +34,18 @@ describe('UserService', () => {
             orWhere: () => createQueryBuilder,
             skip: () => createQueryBuilder,
             take: () => createQueryBuilder,
-            getManyAndCount: async () => [postsArr, 3],
+            getManyAndCount: async () => [postsArr, postsArr.length],
           };
 
           return {
             createQueryBuilder: () => createQueryBuilder,
           };
-        } else if (token === TravelService) {
+        } else if (token === PostService) {
           return {
-            filter(): ForeignPostSaveData {
-              return {
-                id: '',
-                createdAt: undefined,
-                description: '',
-                destination: '',
-                photo: '',
-                title: '',
-                travelId: '',
-                travel: undefined,
-                authorId: '',
-                user: undefined,
-              };
+            filterForeignPost(travel) {
+              return { user: { id: travel.user.id } };
             },
           };
-        } else if (token === TravelService) {
         } else if (typeof token === 'function') {
           const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
@@ -111,9 +61,12 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should return index page data', () => {
-    const postsArr = [postDataMock, postDataMock, postDataMock];
+  it('should return index page data', async () => {
+    const data = await service.getIndex('abc', 1);
 
-    expect(service.getIndex('abc', 1));
+    expect(data.posts.length).toBe(4);
+    expect(data.posts[0].user.id).toBe(ownerId);
+    expect(data.totalPages).toBe(Math.ceil(data.posts.length / config.itemsCountPerPage));
+    expect(data.totalPostsCount).toBe(4);
   });
 });
