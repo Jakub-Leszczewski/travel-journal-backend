@@ -204,6 +204,7 @@ export class UserService {
     if (!id) throw new BadRequestException();
 
     const user = await User.findOne({ where: { id } });
+    if (!user) throw new NotFoundException();
 
     if (user?.photoFn) {
       const filePath = FileManagementUser.getUserPhoto(id, user.photoFn);

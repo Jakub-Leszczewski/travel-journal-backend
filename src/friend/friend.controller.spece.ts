@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FriendService } from '../friend.service';
+import { FriendController } from './friend.controller';
+import { FriendService } from './friend.service';
 import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
 
 const moduleMocker = new ModuleMocker(global);
 
-describe('FriendService', () => {
-  let service: FriendService;
+describe('FriendController', () => {
+  let controller: FriendController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      controllers: [FriendController],
       providers: [FriendService],
     })
       .useMocker((token) => {
@@ -20,10 +22,10 @@ describe('FriendService', () => {
       })
       .compile();
 
-    service = module.get<FriendService>(FriendService);
+    controller = module.get<FriendController>(FriendController);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(controller).toBeDefined();
   });
 });

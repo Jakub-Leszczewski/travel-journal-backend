@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from '../user.controller';
-import { UserService } from '../user.service';
-import { TravelModule } from '../../travel/travel.module';
-import { PostModule } from '../../post/post.module';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+import { TravelModule } from '../travel/travel.module';
+import { PostModule } from '../post/post.module';
 import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
 
 const moduleMocker = new ModuleMocker(global);

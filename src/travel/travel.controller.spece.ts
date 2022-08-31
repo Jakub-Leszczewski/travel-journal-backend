@@ -1,19 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FriendController } from '../friend.controller';
-import { FriendService } from '../friend.service';
+import { TravelController } from './travel.controller';
+import { TravelService } from './travel.service';
 import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
 
 const moduleMocker = new ModuleMocker(global);
 
-describe('FriendController', () => {
-  let controller: FriendController;
+describe('TravelController', () => {
+  let controller: TravelController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [FriendController],
-      providers: [FriendService],
+      controllers: [TravelController],
+      providers: [TravelService],
     })
       .useMocker((token) => {
+        // if (token === CatsService) {
+        //   return { findAll: jest.fn().mockResolvedValue(results) };
+        // }
         if (typeof token === 'function') {
           const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
@@ -22,7 +25,7 @@ describe('FriendController', () => {
       })
       .compile();
 
-    controller = module.get<FriendController>(FriendController);
+    controller = module.get<TravelController>(TravelController);
   });
 
   it('should be defined', () => {

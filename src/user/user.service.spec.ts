@@ -1,18 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user.service';
+import { UserService } from './user.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { DataSource } from 'typeorm';
-import { PostService } from '../../post/post.service';
-import { config } from '../../config/config';
+import { PostService } from '../post/post.service';
+import { config } from '../config/config';
 import {
   BadRequestException,
   ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User } from '../entities/user.entity';
-import { UserHelperService } from '../user-helper.service';
-import { FileManagementUser } from '../../common/utils/file-management/file-management-user';
+import { User } from './entities/user.entity';
+import { UserHelperService } from './user-helper.service';
+import { FileManagementUser } from '../common/utils/file-management/file-management-user';
+import { TravelService } from '../travel/travel.service';
 
 const moduleMocker = new ModuleMocker(global);
 const ownerId = 'abc';
@@ -53,6 +54,15 @@ describe('UserService', () => {
             filterForeignPost(travel) {
               return { user: { id: travel.user.id } };
             },
+            async getCountByUserId() {
+              return 1;
+            },
+          };
+        } else if (token === TravelService) {
+          return {
+            async getCountByUserId() {
+              return 2;
+            },
           };
         } else if (token === UserHelperService) {
           return {
@@ -80,7 +90,9 @@ describe('UserService', () => {
     jest.spyOn(FileManagementUser, 'removeUserPhoto').mockReturnValue(undefined);
     jest.spyOn(FileManagementUser, 'saveUserPhoto').mockReturnValue({ filename: 'xyz' } as any);
     jest.spyOn(FileManagementUser, 'removeFromTmp').mockReturnValue(undefined);
+    jest.spyOn(FileManagementUser, 'removeUserDir').mockReturnValue(undefined);
     jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
+    jest.spyOn(User.prototype, 'remove').mockResolvedValue(undefined);
   });
 
   it('should be defined', async () => {
@@ -222,5 +234,46 @@ describe('UserService', () => {
     );
 
     await expect(result).toBeDefined();
+  });
+
+  it('remove should throw bad request error', async () => {
+    await expect(async () => service.remove('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('remove should throw not found error', async () => {
+    jest.spyOn(User, 'findOne').mockReturnValue(null);
+    await expect(async () => service.remove('abc')).rejects.toThrowError(NotFoundException);
+  });
+
+  it('remove should return user', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async () => {
+      const user = new User();
+      user.id = 'abc';
+      return user;
+    });
+
+    const result = await service.remove('abc');
+    expect(result).toBeDefined();
+  });
+
+  it('getStats should throw bad request error', async () => {
+    await expect(async () => service.getStats('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('getStats should return data', async () => {
+    const result = await service.getStats('abc');
+    expect(result).toEqual({
+      travelCount: 2,
+      postCount: 1,
+    });
+  });
+
+  it('getPhoto should throw bad request error', async () => {
+    await expect(async () => service.getPhoto('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('getPhoto should throw not found error', async () => {
+    jest.spyOn(User, 'findOne').mockReturnValue(null);
+    await expect(async () => service.getPhoto('abc')).rejects.toThrowError(NotFoundException);
   });
 });
