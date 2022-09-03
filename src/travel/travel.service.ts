@@ -111,8 +111,8 @@ export class TravelService {
       travel.description = updateTravelDto.description ?? travel.description;
       travel.destination = updateTravelDto.destination ?? travel.destination;
       travel.comradesCount = updateTravelDto.comradesCount ?? travel.comradesCount;
-      travel.startAt = new Date(updateTravelDto.startAt) ?? travel.startAt;
-      travel.endAt = new Date(updateTravelDto.endAt) ?? travel.endAt;
+      travel.startAt = updateTravelDto.startAt ? new Date(updateTravelDto.startAt) : travel.startAt;
+      travel.endAt = updateTravelDto.endAt ? new Date(updateTravelDto.endAt) : travel.endAt;
 
       if (new Date(travel.startAt).getTime() > new Date(travel.endAt).getTime()) {
         throw new BadRequestException();

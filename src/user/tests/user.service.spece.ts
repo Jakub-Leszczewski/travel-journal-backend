@@ -100,7 +100,11 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should return index page data', async () => {
+  it('getUserIndex - should throw bad request error if id is empty', async () => {
+    await expect(async () => service.getUserIndex('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('getUserIndex - should return correct data', async () => {
     const data = await service.getUserIndex(userId, 1);
 
     expect(data.posts.length).toBe(postsArr.length);
@@ -109,15 +113,11 @@ describe('UserService', () => {
     expect(data.totalPostsCount).toBe(postsArr.length);
   });
 
-  it('if id is empty should throw bad request error', async () => {
-    await expect(async () => service.getUserIndex('')).rejects.toThrowError(BadRequestException);
-  });
-
-  it('findOne should throw bad request error if id is empty', async () => {
+  it('findOne - should throw bad request error if id is empty', async () => {
     await expect(async () => service.findOne('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('findOne should return data', async () => {
+  it('findOne - should return data', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
       const user = new User();
       user.id = options.where.id;
@@ -130,25 +130,25 @@ describe('UserService', () => {
     expect(result.id).toBe(userId);
   });
 
-  it('findOne should throw not found error', async () => {
+  it('findOne - should throw not found error if user is null', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
 
     await expect(async () => service.findOne(userId)).rejects.toThrowError(NotFoundException);
   });
 
-  it('create should throw conflict username error', () => {
+  it('create - should throw conflict username error', () => {
     expect(async () =>
       service.create({ username: 'abc', email: 'xyz' } as any, {} as any),
     ).rejects.toThrowError(ConflictException);
   });
 
-  it('create should throw conflict email error', () => {
+  it('create - should throw conflict email error', () => {
     expect(async () =>
       service.create({ username: 'xyz', email: 'abc' } as any, {} as any),
     ).rejects.toThrowError(ConflictException);
   });
 
-  it('create should return new user', async () => {
+  it('create - should return new user', async () => {
     const result = await service.create(
       { username: 'xyz', email: 'xyz', password: 'abc' } as any,
       { filename: 'xyz' } as any,
@@ -156,20 +156,20 @@ describe('UserService', () => {
     expect(result).toBeDefined();
   });
 
-  it('update should throw bad request error', async () => {
+  it('update - should throw bad request error if id is empty', async () => {
     await expect(async () => service.update('', {} as any, {} as any)).rejects.toThrowError(
       BadRequestException,
     );
   });
 
-  it('update should throw not found error', async () => {
+  it('update - should throw not found error if user is null', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
     await expect(async () => service.update(userId, {} as any, {} as any)).rejects.toThrowError(
       NotFoundException,
     );
   });
 
-  it('update should change name', async () => {
+  it('update - should change name', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
       user.firstName = 'aaa';
@@ -187,7 +187,7 @@ describe('UserService', () => {
     expect(result).toEqual({ ...newData, bio: 'aaa' });
   });
 
-  it('update should change bio', async () => {
+  it('update - should change bio', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
       user.firstName = 'aaa';
@@ -204,7 +204,7 @@ describe('UserService', () => {
     expect(result).toEqual({ ...newData, lastName: 'aaa', firstName: 'aaa' });
   });
 
-  it('update should throw unauthorized while password is bad', async () => {
+  it('update - should throw unauthorized while password is bad', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
       user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
@@ -221,7 +221,7 @@ describe('UserService', () => {
     ).rejects.toThrowError(UnauthorizedException);
   });
 
-  it('update should change password', async () => {
+  it('update - should change password', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
       user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
@@ -237,16 +237,16 @@ describe('UserService', () => {
     await expect(result).toBeDefined();
   });
 
-  it('remove should throw bad request error', async () => {
+  it('remove - should throw bad request error if id is empty', async () => {
     await expect(async () => service.remove('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('remove should throw not found error', async () => {
+  it('remove - should throw not found error if user is null', async () => {
     jest.spyOn(User, 'findOne').mockReturnValue(null);
     await expect(async () => service.remove(userId)).rejects.toThrowError(NotFoundException);
   });
 
-  it('remove should return user', async () => {
+  it('remove - should return user', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
       user.id = userId;
@@ -257,11 +257,11 @@ describe('UserService', () => {
     expect(result).toBeDefined();
   });
 
-  it('getStats should throw bad request error', async () => {
+  it('getStats - should throw bad request error if id is empty', async () => {
     await expect(async () => service.getStats('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('getStats should return data', async () => {
+  it('getStats - should return data', async () => {
     const result = await service.getStats(userId);
     expect(result).toEqual({
       travelCount: 2,
@@ -269,11 +269,11 @@ describe('UserService', () => {
     });
   });
 
-  it('getPhoto should throw bad request error', async () => {
+  it('getPhoto - should throw bad request error if id is empty', async () => {
     await expect(async () => service.getPhoto('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('getPhoto should throw not found error', async () => {
+  it('getPhoto - should throw not found error if user is empty', async () => {
     jest.spyOn(User, 'findOne').mockReturnValue(null);
     await expect(async () => service.getPhoto('abc')).rejects.toThrowError(NotFoundException);
   });
