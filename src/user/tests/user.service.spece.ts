@@ -1,27 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './user.service';
+import { UserService } from '../user.service';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { DataSource } from 'typeorm';
-import { PostService } from '../post/post.service';
-import { config } from '../config/config';
+import { PostService } from '../../post/post.service';
+import { config } from '../../config/config';
 import {
   BadRequestException,
   ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User } from './entities/user.entity';
-import { UserHelperService } from './user-helper.service';
-import { FileManagementUser } from '../common/utils/file-management/file-management-user';
-import { TravelService } from '../travel/travel.service';
+import { User } from '../entities/user.entity';
+import { UserHelperService } from '../user-helper.service';
+import { FileManagementUser } from '../../common/utils/file-management/file-management-user';
+import { TravelService } from '../../travel/travel.service';
 
 const moduleMocker = new ModuleMocker(global);
-const ownerId = 'abc';
+const userId = 'abc';
 const postsArr = [
-  { user: { id: ownerId } },
-  { user: { id: ownerId } },
-  { user: { id: ownerId } },
-  { user: { id: ownerId } },
+  { user: { id: userId } },
+  { user: { id: userId } },
+  { user: { id: userId } },
+  { user: { id: userId } },
 ];
 
 describe('UserService', () => {
@@ -94,16 +94,17 @@ describe('UserService', () => {
     jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
     jest.spyOn(User.prototype, 'remove').mockResolvedValue(undefined);
   });
+  //@TODO sprawdzenie czy funkcja czyszcząca tmp została wywołana
 
   it('should be defined', async () => {
     expect(service).toBeDefined();
   });
 
   it('should return index page data', async () => {
-    const data = await service.getUserIndex('abc', 1);
+    const data = await service.getUserIndex(userId, 1);
 
     expect(data.posts.length).toBe(postsArr.length);
-    expect(data.posts[0].user.id).toBe(ownerId);
+    expect(data.posts[0].user.id).toBe(userId);
     expect(data.totalPages).toBe(Math.ceil(data.posts.length / config.itemsCountPerPage));
     expect(data.totalPostsCount).toBe(postsArr.length);
   });
@@ -123,16 +124,16 @@ describe('UserService', () => {
 
       return user;
     });
-    const result = await service.findOne('abc');
+    const result = await service.findOne(userId);
 
     expect(result).toBeDefined();
-    expect(result.id).toBe('abc');
+    expect(result.id).toBe(userId);
   });
 
   it('findOne should throw not found error', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
 
-    await expect(async () => service.findOne('abc')).rejects.toThrowError(NotFoundException);
+    await expect(async () => service.findOne(userId)).rejects.toThrowError(NotFoundException);
   });
 
   it('create should throw conflict username error', () => {
@@ -163,7 +164,7 @@ describe('UserService', () => {
 
   it('update should throw not found error', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
-    await expect(async () => service.update('abc', {} as any, {} as any)).rejects.toThrowError(
+    await expect(async () => service.update(userId, {} as any, {} as any)).rejects.toThrowError(
       NotFoundException,
     );
   });
@@ -181,7 +182,7 @@ describe('UserService', () => {
       firstName: 'bbb',
       lastName: 'bbb',
     };
-    const result = await service.update('abc', newData as any, {} as any);
+    const result = await service.update(userId, newData as any, {} as any);
 
     expect(result).toEqual({ ...newData, bio: 'aaa' });
   });
@@ -198,7 +199,7 @@ describe('UserService', () => {
     const newData = {
       bio: 'bbb',
     };
-    const result = await service.update('abc', newData as any, {} as any);
+    const result = await service.update(userId, newData as any, {} as any);
 
     expect(result).toEqual({ ...newData, lastName: 'aaa', firstName: 'aaa' });
   });
@@ -213,7 +214,7 @@ describe('UserService', () => {
     await expect(
       async () =>
         await service.update(
-          'abc',
+          userId,
           { password: 'Haslo1234', newPassword: 'Haslo1234' } as any,
           {} as any,
         ),
@@ -228,7 +229,7 @@ describe('UserService', () => {
     });
 
     const result = await service.update(
-      'abc',
+      userId,
       { password: 'Haslo123', newPassword: 'Haslo1234' } as any,
       {} as any,
     );
@@ -242,17 +243,17 @@ describe('UserService', () => {
 
   it('remove should throw not found error', async () => {
     jest.spyOn(User, 'findOne').mockReturnValue(null);
-    await expect(async () => service.remove('abc')).rejects.toThrowError(NotFoundException);
+    await expect(async () => service.remove(userId)).rejects.toThrowError(NotFoundException);
   });
 
   it('remove should return user', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async () => {
       const user = new User();
-      user.id = 'abc';
+      user.id = userId;
       return user;
     });
 
-    const result = await service.remove('abc');
+    const result = await service.remove(userId);
     expect(result).toBeDefined();
   });
 
@@ -261,7 +262,7 @@ describe('UserService', () => {
   });
 
   it('getStats should return data', async () => {
-    const result = await service.getStats('abc');
+    const result = await service.getStats(userId);
     expect(result).toEqual({
       travelCount: 2,
       postCount: 1,

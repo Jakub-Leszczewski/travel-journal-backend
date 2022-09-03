@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
-import { UserHelperService } from './user-helper.service';
-import { User } from './entities/user.entity';
+import { UserHelperService } from '../user-helper.service';
+import { User } from '../entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 
 const moduleMocker = new ModuleMocker(global);

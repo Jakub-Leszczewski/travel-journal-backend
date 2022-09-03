@@ -12,8 +12,6 @@ import {
 import { Travel } from './entities/travel.entity';
 import { User } from '../user/entities/user.entity';
 import { FileManagementTravel } from '../common/utils/file-management/file-management-travel';
-import { FileManagementUser } from '../common/utils/file-management/file-management-user';
-import { FileManagementPost } from '../common/utils/file-management/file-management-post';
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
@@ -66,8 +64,8 @@ export class TravelService {
       travel.description = createTravelDto.description;
       travel.destination = createTravelDto.destination;
       travel.comradesCount = createTravelDto.comradesCount;
-      travel.startAt = new Date(createTravelDto.startAt) ?? travel.startAt;
-      travel.endAt = new Date(createTravelDto.endAt) ?? travel.endAt;
+      travel.startAt = new Date(createTravelDto.startAt);
+      travel.endAt = new Date(createTravelDto.endAt);
 
       if (new Date(travel.startAt).getTime() > new Date(travel.endAt).getTime()) {
         throw new BadRequestException();
@@ -82,7 +80,7 @@ export class TravelService {
         }
 
         const newFile = await FileManagementTravel.saveTravelPhoto(user.id, travel.id, file);
-        await FileManagementPost.removeFromTmp(file.filename);
+        await FileManagementTravel.removeFromTmp(file.filename);
         travel.photoFn = newFile.filename;
       }
 
@@ -90,7 +88,7 @@ export class TravelService {
 
       return this.filter(travel);
     } catch (e) {
-      if (file) await FileManagementUser.removeFromTmp(file.filename);
+      if (file) await FileManagementTravel.removeFromTmp(file.filename);
       throw e;
     }
   }
@@ -126,7 +124,7 @@ export class TravelService {
         }
 
         const newFile = await FileManagementTravel.saveTravelPhoto(travel.user.id, travel.id, file);
-        await FileManagementPost.removeFromTmp(file.filename);
+        await FileManagementTravel.removeFromTmp(file.filename);
 
         travel.photoFn = newFile.filename;
       }
@@ -135,7 +133,7 @@ export class TravelService {
 
       return this.filter(travel);
     } catch (e) {
-      if (file) await FileManagementUser.removeFromTmp(file.filename);
+      if (file) await FileManagementTravel.removeFromTmp(file.filename);
       throw e;
     }
   }
