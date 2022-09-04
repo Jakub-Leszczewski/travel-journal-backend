@@ -14,9 +14,16 @@ import { User } from '../entities/user.entity';
 import { UserHelperService } from '../user-helper.service';
 import { FileManagementUser } from '../../common/utils/file-management/file-management-user';
 import { TravelService } from '../../travel/travel.service';
+import { Travel } from '../../travel/entities/travel.entity';
 
 const moduleMocker = new ModuleMocker(global);
+
+let removeFromTmpMock = jest.fn(async () => undefined);
 const userId = 'abc';
+const multerFileMock: any = { filename: `${userId}.png` };
+const newUserDtoMock: any = { username: 'xyz', email: 'xyz', password: 'abc' };
+const newPasswordDtoMock: any = { password: 'Password1234', newPassword: 'Password1234' };
+const userMock = new User();
 const postsArr = [
   { user: { id: userId } },
   { user: { id: userId } },
@@ -87,14 +94,20 @@ describe('UserService', () => {
       .compile();
 
     service = module.get<UserService>(UserService);
+
+    userMock.username = 'aaa';
+    userMock.email = 'aaa';
+    userMock.hashPwd = '$2a$13$Iwf5vi4HLT8GMHysIbbEH.DjVgeC/8O.VJj/o0gJtqB2S9tKhvnP6'; // Password1234
+
+    removeFromTmpMock = jest.fn(async () => undefined);
+
     jest.spyOn(FileManagementUser, 'removeUserPhoto').mockReturnValue(undefined);
     jest.spyOn(FileManagementUser, 'saveUserPhoto').mockReturnValue({ filename: 'xyz' } as any);
-    jest.spyOn(FileManagementUser, 'removeFromTmp').mockReturnValue(undefined);
+    jest.spyOn(FileManagementUser, 'removeFromTmp').mockImplementation(removeFromTmpMock);
     jest.spyOn(FileManagementUser, 'removeUserDir').mockReturnValue(undefined);
     jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
     jest.spyOn(User.prototype, 'remove').mockResolvedValue(undefined);
   });
-  //@TODO sprawdzenie czy funkcja czyszcząca tmp została wywołana
 
   it('should be defined', async () => {
     expect(service).toBeDefined();
@@ -149,11 +162,41 @@ describe('UserService', () => {
   });
 
   it('create - should return new user', async () => {
-    const result = await service.create(
-      { username: 'xyz', email: 'xyz', password: 'abc' } as any,
-      { filename: 'xyz' } as any,
-    );
+    const result = await service.create(newUserDtoMock, multerFileMock);
+
     expect(result).toBeDefined();
+  });
+
+  it('create - should remove img from tmp if success', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      userMock.id = options.where.id;
+      return userMock;
+    });
+
+    await service.create(newUserDtoMock, multerFileMock);
+
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('create - should remove img from tmp if error', async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      userMock.id = options.where.id;
+      return userMock;
+    });
+
+    await expect(async () => await service.create({} as any, multerFileMock)).rejects.toThrow();
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("create - shouldn't remove img from tmp if file is empty", async () => {
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      userMock.id = options.where.id;
+      return userMock;
+    });
+
+    await service.create(newUserDtoMock, undefined);
+
+    expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
   it('update - should throw bad request error if id is empty', async () => {
@@ -164,9 +207,10 @@ describe('UserService', () => {
 
   it('update - should throw not found error if user is null', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
-    await expect(async () => service.update(userId, {} as any, {} as any)).rejects.toThrowError(
-      NotFoundException,
-    );
+
+    await expect(async () =>
+      service.update(userId, newPasswordDtoMock, multerFileMock),
+    ).rejects.toThrowError(NotFoundException);
   });
 
   it('update - should change name', async () => {
@@ -205,36 +249,45 @@ describe('UserService', () => {
   });
 
   it('update - should throw unauthorized while password is bad', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async () => {
-      const user = new User();
-      user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
-      return user;
-    });
+    jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
 
     await expect(
       async () =>
-        await service.update(
-          userId,
-          { password: 'Haslo1234', newPassword: 'Haslo1234' } as any,
-          {} as any,
-        ),
+        await service.update(userId, { ...newPasswordDtoMock, password: 'BadPassword' }, {} as any),
     ).rejects.toThrowError(UnauthorizedException);
   });
 
   it('update - should change password', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async () => {
-      const user = new User();
-      user.hashPwd = '$2a$13$BJc7CYyfTDtrWkKV2WTBuuAR1CmrvGwLZjPN8BVkn30eztsAJC9pe'; // Haslo123
-      return user;
-    });
+    jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
 
-    const result = await service.update(
-      userId,
-      { password: 'Haslo123', newPassword: 'Haslo1234' } as any,
-      {} as any,
-    );
+    const result = await service.update(userId, newPasswordDtoMock, {} as any);
 
     await expect(result).toBeDefined();
+  });
+
+  it('update - should remove img from tmp if success', async () => {
+    jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
+
+    await service.update(userId, newUserDtoMock, multerFileMock);
+
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('update - should remove img from tmp if error', async () => {
+    jest.spyOn(Travel, 'findOne').mockResolvedValue(userMock);
+
+    await expect(async () =>
+      service.update('', newUserDtoMock, multerFileMock),
+    ).rejects.toThrowError(BadRequestException);
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("update - shouldn't remove img from tmp if file is empty", async () => {
+    jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
+
+    await service.update(userId, newUserDtoMock, undefined);
+
+    expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
   it('remove - should throw bad request error if id is empty', async () => {
@@ -247,13 +300,10 @@ describe('UserService', () => {
   });
 
   it('remove - should return user', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async () => {
-      const user = new User();
-      user.id = userId;
-      return user;
-    });
+    jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
 
     const result = await service.remove(userId);
+
     expect(result).toBeDefined();
   });
 
@@ -263,6 +313,7 @@ describe('UserService', () => {
 
   it('getStats - should return data', async () => {
     const result = await service.getStats(userId);
+
     expect(result).toEqual({
       travelCount: 2,
       postCount: 1,
@@ -275,6 +326,7 @@ describe('UserService', () => {
 
   it('getPhoto - should throw not found error if user is empty', async () => {
     jest.spyOn(User, 'findOne').mockReturnValue(null);
+
     await expect(async () => service.getPhoto('abc')).rejects.toThrowError(NotFoundException);
   });
 });

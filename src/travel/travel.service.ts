@@ -161,7 +161,9 @@ export class TravelService {
       relations: ['user'],
     });
 
-    if (travel?.photoFn && travel.user) {
+    if (!travel || !travel.user) throw new NotFoundException();
+
+    if (travel?.photoFn) {
       const filePath = FileManagementTravel.getTravelPhoto(
         travel.user.id,
         travel.id,
