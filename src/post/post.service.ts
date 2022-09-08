@@ -13,12 +13,12 @@ import {
   ForeignPostSaveData,
   GetPostResponse,
   GetPostsResponse,
+  PostInterface,
   PostSaveResponseData,
 } from '../types';
 import { Travel } from '../travel/entities/travel.entity';
 import { Post } from './entities/post.entity';
 import { FileManagementPost } from '../common/utils/file-management/file-management-post';
-import { DataSource } from 'typeorm';
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
@@ -28,7 +28,6 @@ import { UserHelperService } from '../user/user-helper.service';
 @Injectable()
 export class PostService {
   constructor(
-    @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
   ) {}
@@ -36,26 +35,24 @@ export class PostService {
   async findOne(id: string): Promise<GetPostResponse> {
     if (!id) throw new BadRequestException();
 
-    const post = await this.findOneById(id);
+    const post = await this.getPost({ id });
     if (!post) throw new NotFoundException();
 
     return this.filter(post);
   }
 
   async findAllByTravelId(id: string, page = 1): Promise<GetPostsResponse> {
-    if (!id) throw new Error('id is empty');
+    if (!id) throw new BadRequestException('id is empty');
 
-    const [posts, totalPostsCount] = await this.dataSource
-      .createQueryBuilder()
-      .select(['post', 'travel.id', 'user.id'])
-      .from(Post, 'post')
-      .leftJoin('post.travel', 'travel')
-      .leftJoin('travel.user', 'user')
-      .where('travel.id=:id', { id })
-      .orderBy('post.createdAt', 'DESC')
-      .skip(config.itemsCountPerPage * (page - 1))
-      .take(config.itemsCountPerPage)
-      .getManyAndCount();
+    const [posts, totalPostsCount] = await Post.findAndCount({
+      where: {
+        travel: { id },
+      },
+      relations: ['travel', 'travel.user'],
+      order: { createdAt: 'DESC' },
+      skip: config.itemsCountPerPage * (page - 1),
+      take: config.itemsCountPerPage,
+    });
 
     return {
       posts: posts.map((e) => this.filter(e)),
@@ -64,17 +61,11 @@ export class PostService {
     };
   }
 
-  async findOneById(id: string) {
-    if (!id) throw new Error('postId is empty');
-
-    return this.dataSource
-      .createQueryBuilder()
-      .select(['post', 'travel.id', 'user.id'])
-      .from(Post, 'post')
-      .leftJoin('post.travel', 'travel')
-      .leftJoin('travel.user', 'user')
-      .where('post.id=:id', { id })
-      .getOne();
+  async getPost(where: Partial<PostInterface>): Promise<Post> {
+    return Post.findOne({
+      where,
+      relations: ['travel', 'travel.user'],
+    });
   }
 
   async create(
@@ -96,10 +87,10 @@ export class PostService {
       post.destination = createPostDto.destination;
       post.description = createPostDto.description;
       post.createdAt = new Date();
-
       await post.save();
 
       post.travel = travel;
+      await post.save();
 
       if (file) {
         if (post.photoFn) {
@@ -109,9 +100,8 @@ export class PostService {
         await FileManagementPost.removeFromTmp(file.filename);
 
         post.photoFn = newFile.filename;
+        await post.save();
       }
-
-      await post.save();
 
       return this.filter(post);
     } catch (e) {
@@ -124,13 +114,12 @@ export class PostService {
     try {
       if (!id) throw new BadRequestException();
 
-      const post = await this.findOneById(id);
+      const post = await this.getPost({ id });
       if (!post || !post.travel || !post.travel.user) throw new NotFoundException();
 
       post.title = updatePostDto.title ?? post.title;
       post.destination = updatePostDto.destination ?? post.destination;
       post.description = updatePostDto.description ?? post.description;
-
       await post.save();
 
       if (file) {
@@ -148,10 +137,10 @@ export class PostService {
           file,
         );
         await FileManagementPost.removeFromTmp(file.filename);
-        post.photoFn = newFile.filename;
-      }
 
-      await post.save();
+        post.photoFn = newFile.filename;
+        await post.save();
+      }
 
       return this.filter(post);
     } catch (e) {
@@ -163,7 +152,7 @@ export class PostService {
   async remove(id: string): Promise<DeletePostResponse> {
     if (!id) throw new BadRequestException();
 
-    const post = await this.findOneById(id);
+    const post = await this.getPost({ id });
     if (!post || !post.travel || !post.travel.user) throw new NotFoundException();
 
     if (post.photoFn)
@@ -176,7 +165,7 @@ export class PostService {
   async getPhoto(id: string): Promise<ReadStream> {
     if (!id) throw new BadRequestException();
 
-    const post = await this.findOneById(id);
+    const post = await this.getPost({ id });
     if (post.photoFn && post.travel && post.travel.user) {
       const filePath = FileManagementPost.getPostPhoto(
         post.travel.user.id,
@@ -199,11 +188,12 @@ export class PostService {
 
   filter(post: Post): PostSaveResponseData {
     const { photoFn, travel, ...postResponse } = post;
+    const { user, posts } = travel;
 
     return {
       ...postResponse,
       photo: `/post/photo/${postResponse.id}`,
-      authorId: travel.user.id,
+      authorId: user.id,
       travelId: travel.id,
     };
   }
@@ -220,3 +210,5 @@ export class PostService {
     };
   }
 }
+
+//@TODO błąd powodujący dodanie podróży do bd bez właściciela

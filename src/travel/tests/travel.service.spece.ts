@@ -81,7 +81,7 @@ describe('TravelService', () => {
     await expect(async () => service.findOne('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('findOne - should throw not found error if travel is null', async () => {
+  it('findOne - should throw not found error if travel is empty', async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(null);
 
     await expect(async () => service.findOne(travelId)).rejects.toThrowError(NotFoundException);

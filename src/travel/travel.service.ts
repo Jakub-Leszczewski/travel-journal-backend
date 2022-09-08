@@ -59,6 +59,10 @@ export class TravelService {
       const user = await User.findOne({ where: { id: userId } });
       if (!user) throw new NotFoundException();
 
+      if (new Date(createTravelDto.startAt).getTime() > new Date(createTravelDto.endAt).getTime()) {
+        throw new BadRequestException();
+      }
+
       const travel = new Travel();
       travel.title = createTravelDto.title;
       travel.description = createTravelDto.description;
@@ -66,13 +70,10 @@ export class TravelService {
       travel.comradesCount = createTravelDto.comradesCount;
       travel.startAt = new Date(createTravelDto.startAt);
       travel.endAt = new Date(createTravelDto.endAt);
-
-      if (new Date(travel.startAt).getTime() > new Date(travel.endAt).getTime()) {
-        throw new BadRequestException();
-      }
-
       await travel.save();
+
       travel.user = user;
+      await travel.save();
 
       if (file) {
         if (travel.photoFn) {
@@ -81,10 +82,10 @@ export class TravelService {
 
         const newFile = await FileManagementTravel.saveTravelPhoto(user.id, travel.id, file);
         await FileManagementTravel.removeFromTmp(file.filename);
-        travel.photoFn = newFile.filename;
-      }
 
-      await travel.save();
+        travel.photoFn = newFile.filename;
+        await travel.save();
+      }
 
       return this.filter(travel);
     } catch (e) {
@@ -113,6 +114,7 @@ export class TravelService {
       travel.comradesCount = updateTravelDto.comradesCount ?? travel.comradesCount;
       travel.startAt = updateTravelDto.startAt ? new Date(updateTravelDto.startAt) : travel.startAt;
       travel.endAt = updateTravelDto.endAt ? new Date(updateTravelDto.endAt) : travel.endAt;
+      await travel.save();
 
       if (new Date(travel.startAt).getTime() > new Date(travel.endAt).getTime()) {
         throw new BadRequestException();
@@ -127,9 +129,8 @@ export class TravelService {
         await FileManagementTravel.removeFromTmp(file.filename);
 
         travel.photoFn = newFile.filename;
+        await travel.save();
       }
-
-      await travel.save();
 
       return this.filter(travel);
     } catch (e) {

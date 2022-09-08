@@ -56,7 +56,9 @@ describe('UserService', () => {
           return {
             createQueryBuilder: () => createQueryBuilder,
           };
-        } else if (token === PostService) {
+        }
+
+        if (token === PostService) {
           return {
             filterForeignPost(travel) {
               return { user: { id: travel.user.id } };
@@ -65,13 +67,17 @@ describe('UserService', () => {
               return 1;
             },
           };
-        } else if (token === TravelService) {
+        }
+
+        if (token === TravelService) {
           return {
             async getCountByUserId() {
               return 2;
             },
           };
-        } else if (token === UserHelperService) {
+        }
+
+        if (token === UserHelperService) {
           return {
             filter(user: User) {
               return {
