@@ -8,6 +8,7 @@ import { Post } from '../entities/post.entity';
 import { config } from '../../config/config';
 import { FileManagementPost } from '../../common/utils/file-management/file-management-post';
 import { TravelService } from '../../travel/travel.service';
+import { UserHelperService } from '../../user/user-helper.service';
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -41,8 +42,16 @@ describe('PostService', () => {
         if (token === TravelService) {
           return {
             getTravel: async (where: any) => Travel.findOne({ where }),
+            filter: (travel: Travel) => ({ id: travel.id }),
           };
         }
+
+        if (token === UserHelperService) {
+          return {
+            filterPublicData: (user: User) => ({ id: user.id }),
+          };
+        }
+
         if (typeof token === 'function') {
           const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
@@ -358,5 +367,30 @@ describe('PostService', () => {
     const result = await service.getCountByUserId(userId);
 
     expect(result).toBe(3);
+  });
+
+  it('filter - should return save data', () => {
+    const { photoFn, travel, ...postResponse } = postMock;
+    const { user, posts } = travel;
+
+    expect(service.filter(postMock)).toEqual({
+      ...postResponse,
+      photo: `/post/photo/${postResponse.id}`,
+      authorId: user.id,
+      travelId: travel.id,
+    });
+  });
+
+  it('filterForeignPost - should return save data', () => {
+    const { travel } = postMock;
+    const { authorId, travelId, ...postData } = service.filter(postMock);
+    const { user, posts, ...travelData } = travel;
+
+    expect(service.filterForeignPost(postMock)).toEqual({
+      ...postData,
+      travel: { ...travelData },
+      user: { ...user },
+      photo: `/post/photo/${postData.id}`,
+    });
   });
 });

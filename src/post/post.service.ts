@@ -163,6 +163,8 @@ export class PostService {
     if (!id) throw new BadRequestException();
 
     const post = await this.getPost({ id });
+    if (!post) throw new NotFoundException();
+
     if (post.photoFn && post.travel && post.travel.user) {
       const filePath = FileManagementPost.getPostPhoto(
         post.travel.user.id,
@@ -207,5 +209,3 @@ export class PostService {
     };
   }
 }
-
-//@TODO błąd powodujący dodanie podróży do bd bez właściciela
