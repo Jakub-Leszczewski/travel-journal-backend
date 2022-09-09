@@ -76,10 +76,7 @@ export class PostService {
     try {
       if (!travelId) throw new BadRequestException();
 
-      const travel = await Travel.findOne({
-        where: { id: travelId },
-        relations: ['user'],
-      });
+      const travel = await this.travelService.getTravel({ id: travelId });
       if (!travel || !travel.user) throw new NotFoundException();
 
       const post = new Post();

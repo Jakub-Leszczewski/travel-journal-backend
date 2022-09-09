@@ -6,6 +6,7 @@ import {
   DeleteTravelResponse,
   GetTravelResponse,
   GetTravelsResponse,
+  PostInterface,
   TravelSaveResponseData,
   UpdateTravelResponse,
 } from '../types';
@@ -15,19 +16,24 @@ import { FileManagementTravel } from '../common/utils/file-management/file-manag
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
+import { Post } from '../post/entities/post.entity';
 
 @Injectable()
 export class TravelService {
   async findOne(id: string): Promise<GetTravelResponse> {
     if (!id) throw new BadRequestException();
 
-    const travel = await Travel.findOne({
-      where: { id },
-      relations: ['user'],
-    });
+    const travel = await this.getTravel({ id });
     if (!travel) throw new NotFoundException();
 
     return this.filter(travel);
+  }
+
+  async getTravel(where: Partial<PostInterface>): Promise<Travel> {
+    return Travel.findOne({
+      where,
+      relations: ['user'],
+    });
   }
 
   async findAllByUserId(id: string, page = 1): Promise<GetTravelsResponse> {
@@ -102,10 +108,7 @@ export class TravelService {
     try {
       if (!id) throw new BadRequestException();
 
-      const travel = await Travel.findOne({
-        where: { id },
-        relations: ['user'],
-      });
+      const travel = await this.getTravel({ id });
       if (!travel || !travel.user) throw new NotFoundException();
 
       travel.title = updateTravelDto.title ?? travel.title;
@@ -142,10 +145,7 @@ export class TravelService {
   async remove(id: string): Promise<DeleteTravelResponse> {
     if (!id) throw new BadRequestException();
 
-    const travel = await Travel.findOne({
-      where: { id },
-      relations: ['user'],
-    });
+    const travel = await this.getTravel({ id });
     if (!travel || !travel.user) throw new NotFoundException();
 
     await FileManagementTravel.removeTravelDir(travel.user.id, id);

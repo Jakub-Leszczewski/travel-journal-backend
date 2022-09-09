@@ -139,7 +139,7 @@ describe('TravelService', () => {
     ).rejects.toThrowError(NotFoundException);
   });
 
-  it('create - should return record with given owner', async () => {
+  it('create - should return correct data', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
       const user = new User();
       user.id = options.where.id;
