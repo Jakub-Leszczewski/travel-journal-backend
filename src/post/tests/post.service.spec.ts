@@ -247,4 +247,93 @@ describe('PostService', () => {
 
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
+
+  it('update - should throw bad request error if empty id', async () => {
+    await expect(async () => service.update('', newPostData, fileMock)).rejects.toThrowError(
+      BadRequestException,
+    );
+  });
+
+  it('update - should throw not found error if post empty', async () => {
+    jest.spyOn(Post, 'findOne').mockResolvedValue(null);
+
+    await expect(async () => service.update(postId, newPostData, fileMock)).rejects.toThrowError(
+      NotFoundException,
+    );
+  });
+
+  it('update - should throw not found error if travel empty', async () => {
+    jest.spyOn(Post, 'findOne').mockImplementation(async () => {
+      postMock.travel = null;
+      return postMock;
+    });
+
+    await expect(async () => service.update(postId, newPostData, fileMock)).rejects.toThrowError(
+      NotFoundException,
+    );
+  });
+
+  it('update - should throw not found error if user empty', async () => {
+    jest.spyOn(Post, 'findOne').mockImplementation(async () => {
+      postMock.travel.user = null;
+      return postMock;
+    });
+
+    await expect(async () => service.update(postId, newPostData, fileMock)).rejects.toThrowError(
+      NotFoundException,
+    );
+  });
+
+  it('update - should return correct data', async () => {
+    jest.spyOn(Post, 'findOne').mockImplementation(async (options: any) => {
+      postMock.id = options.where.id;
+      return postMock;
+    });
+
+    const result = await service.update(
+      postId,
+      {
+        description: 'new',
+        destination: 'new',
+        title: 'new',
+      } as any,
+      fileMock,
+    );
+
+    expect(result).toEqual({
+      id: postId,
+      title: 'new',
+      description: 'new',
+      destination: 'new',
+      createdAt: currentDate,
+      photo: `/post/photo/${postId}`,
+      authorId: userId,
+      travelId: travelId,
+    });
+  });
+
+  it('update - should remove img from tmp if success', async () => {
+    jest.spyOn(Post, 'findOne').mockResolvedValue(postMock);
+
+    await service.update(postId, newPostData, fileMock);
+
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('update - should remove img from tmp if error', async () => {
+    jest.spyOn(Post, 'findOne').mockResolvedValue(postMock);
+
+    await expect(async () => service.update('', newPostData, fileMock)).rejects.toThrowError(
+      BadRequestException,
+    );
+    expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("update - shouldn't remove img from tmp if file is empty", async () => {
+    jest.spyOn(Post, 'findOne').mockResolvedValue(postMock);
+
+    await service.create(postId, newPostData, undefined);
+
+    expect(removeFromTmpMock.mock.calls.length).toBe(0);
+  });
 });
