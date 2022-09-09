@@ -89,14 +89,8 @@ describe('TravelService', () => {
 
   it('findOne - should return record with given id', async () => {
     jest.spyOn(Travel, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = userId;
-
-      const travel = new Travel();
-      travel.id = options.where.id;
-      travel.user = user;
-
-      return travel;
+      travelMock.id = options.where.id;
+      return travelMock;
     });
 
     const result = await service.findOne(travelId);
@@ -109,14 +103,8 @@ describe('TravelService', () => {
 
   it('findAllByUserId - should return the correct data', async () => {
     jest.spyOn(Travel, 'findAndCount').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.user.id;
-
-      const travel = new Travel();
-      travel.id = travelId;
-      travel.user = user;
-
-      return [[travel, travel, travel], 20];
+      travelMock.user.id = options.where.user.id;
+      return [[travelMock, travelMock, travelMock], 20];
     });
 
     const result = await service.findAllByUserId(userId);
@@ -125,9 +113,24 @@ describe('TravelService', () => {
     expect(result.totalPages).toBe(Math.ceil(20 / config.itemsCountPerPage));
   });
 
+  it('getTravel - findOne should call with the appropriate options', async () => {
+    const where: any = { id: travelId };
+    let findOneOptionsMock: any = {};
+
+    jest.spyOn(Travel, 'findOne').mockImplementation((options: any) => {
+      findOneOptionsMock = options;
+      return {} as any;
+    });
+
+    await service.getTravel(where);
+
+    expect(findOneOptionsMock.relations.includes('user')).toBe(true);
+    expect(findOneOptionsMock.where).toEqual(where);
+  });
+
   it('create - should throw bad request error if id is empty', async () => {
     await expect(async () =>
-      service.create(newTravelData, '', multerFileMock),
+      service.create('', newTravelData, multerFileMock),
     ).rejects.toThrowError(BadRequestException);
   });
 
@@ -135,18 +138,17 @@ describe('TravelService', () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(null);
 
     await expect(async () =>
-      service.create(newTravelData, userId, multerFileMock),
+      service.create(userId, newTravelData, multerFileMock),
     ).rejects.toThrowError(NotFoundException);
   });
 
   it('create - should return correct data', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.id;
-      return user;
+      userMock.id = options.where.id;
+      return userMock;
     });
 
-    const result = await service.create(newTravelData, userId, multerFileMock);
+    const result = await service.create(userId, newTravelData, multerFileMock);
 
     expect(result).toEqual({
       ...newTravelData,
@@ -160,12 +162,12 @@ describe('TravelService', () => {
   it('create - should return bad request error if endAt is less than startAt', async () => {
     await expect(async () =>
       service.create(
+        userId,
         {
           ...newTravelData,
           startAt: new Date(currDate.getTime() + 10),
           endAt: currDate,
         },
-        userId,
         multerFileMock,
       ),
     ).rejects.toThrowError(BadRequestException);
@@ -173,37 +175,34 @@ describe('TravelService', () => {
 
   it('create - should remove img from tmp if success', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.id;
-      return user;
+      userMock.id = options.where.id;
+      return userMock;
     });
 
-    await service.create(newTravelData, userId, multerFileMock);
+    await service.create(userId, newTravelData, multerFileMock);
 
     expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('create - should remove img from tmp if error', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.id;
-      return user;
+      userMock.id = options.where.id;
+      return userMock;
     });
 
     await expect(async () =>
-      service.create(newTravelData, '', multerFileMock),
+      service.create('', newTravelData, multerFileMock),
     ).rejects.toThrowError(BadRequestException);
     expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("create - shouldn't remove img from tmp if file is empty", async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.id;
-      return user;
+      userMock.id = options.where.id;
+      return userMock;
     });
 
-    await service.create(newTravelData, userId, undefined);
+    await service.create(userId, newTravelData, undefined);
 
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
@@ -218,38 +217,35 @@ describe('TravelService', () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(null);
 
     await expect(async () =>
-      service.update(travelId, newTravelData, multerFileMock),
+      service.update(travelId, {} as any, multerFileMock),
     ).rejects.toThrowError(NotFoundException);
   });
 
   it('update - should throw not found error if not found travel.user', async () => {
-    jest.spyOn(Travel, 'findOne').mockResolvedValue({} as any);
+    jest.spyOn(Travel, 'findOne').mockImplementation(async () => {
+      travelMock.user = undefined;
+      return travelMock;
+    });
 
     await expect(async () =>
-      service.update(travelId, newTravelData, multerFileMock),
+      service.update(travelId, {} as any, multerFileMock),
     ).rejects.toThrowError(NotFoundException);
   });
 
   it('update - should return record with updated data(title, destination, description)', async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
-    const result = await service.update(
-      travelId,
-      {
-        title: 'new',
-        destination: 'new',
-        description: 'new',
-        id: 'new',
-      } as any,
-      multerFileMock,
-    );
-
-    expect(result).toEqual({
-      ...newTravelData,
-      id: travelId,
+    const newData: any = {
       title: 'new',
       destination: 'new',
       description: 'new',
+    };
+    const result = await service.update(travelId, newData, multerFileMock);
+
+    expect(result).toEqual({
+      ...newTravelData,
+      ...newData,
+      id: travelId,
       endAt: currDate,
       startAt: currDate,
       photo: `/travel/photo/${travelId}`,
@@ -261,22 +257,17 @@ describe('TravelService', () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
     const currentDatePlus = new Date(currDate.getTime() + 10);
-    const result = await service.update(
-      travelId,
-      {
-        comradesCount: 1,
-        startAt: currentDatePlus.toISOString(),
-        endAt: currentDatePlus.toISOString(),
-      } as any,
-      multerFileMock,
-    );
-
-    expect(result).toEqual({
-      ...newTravelData,
-      id: travelId,
+    const newData: any = {
       comradesCount: 1,
       startAt: currentDatePlus,
       endAt: currentDatePlus,
+    };
+    const result = await service.update(travelId, newData, multerFileMock);
+
+    expect(result).toEqual({
+      ...newTravelData,
+      ...newData,
+      id: travelId,
       photo: `/travel/photo/${travelId}`,
       authorId: userId,
     });
@@ -285,15 +276,13 @@ describe('TravelService', () => {
   it('update - should return bad request error if endAt is less than startAt', async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
+    const newData: any = {
+      startAt: new Date(currDate.getTime() + 10),
+      endAt: currDate,
+    };
+
     await expect(async () =>
-      service.update(
-        travelId,
-        {
-          startAt: new Date(currDate.getTime() + 10),
-          endAt: currDate,
-        } as any,
-        multerFileMock,
-      ),
+      service.update(travelId, newData, multerFileMock),
     ).rejects.toThrowError(BadRequestException);
   });
 
@@ -308,16 +297,16 @@ describe('TravelService', () => {
   it('update - should remove img from tmp if error', async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
-    await expect(async () =>
-      service.update('', newTravelData, multerFileMock),
-    ).rejects.toThrowError(BadRequestException);
+    await expect(async () => service.update('', {} as any, multerFileMock)).rejects.toThrowError(
+      BadRequestException,
+    );
     expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("update - shouldn't remove img from tmp if file is empty", async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
-    await service.update(travelId, newTravelData, undefined);
+    await service.update(travelId, {} as any, undefined);
 
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
@@ -370,15 +359,6 @@ describe('TravelService', () => {
 
   it('getPhoto - should throw not found error if travel is empty', async () => {
     jest.spyOn(Travel, 'findOne').mockResolvedValue(null);
-
-    await expect(async () => service.getPhoto(travelId)).rejects.toThrowError(NotFoundException);
-  });
-
-  it('getPhoto - should throw not found error if user is empty', async () => {
-    jest.spyOn(Travel, 'findOne').mockImplementation(async () => {
-      travelMock.user = undefined;
-      return travelMock;
-    });
 
     await expect(async () => service.getPhoto(travelId)).rejects.toThrowError(NotFoundException);
   });

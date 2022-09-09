@@ -101,8 +101,10 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
 
-    userMock.username = 'aaa';
-    userMock.email = 'aaa';
+    userMock.id = userId;
+    userMock.username = 'abc';
+    userMock.email = 'abc';
+    userMock.bio = 'abc';
     userMock.hashPwd = '$2a$13$Iwf5vi4HLT8GMHysIbbEH.DjVgeC/8O.VJj/o0gJtqB2S9tKhvnP6'; // Password1234
 
     removeFromTmpMock = jest.fn(async () => undefined);
@@ -138,10 +140,8 @@ describe('UserService', () => {
 
   it('findOne - should return data', async () => {
     jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      const user = new User();
-      user.id = options.where.id;
-
-      return user;
+      userMock.id = options.where.id;
+      return userMock;
     });
     const result = await service.findOne(userId);
 
@@ -157,13 +157,13 @@ describe('UserService', () => {
 
   it('create - should throw conflict username error', () => {
     expect(async () =>
-      service.create({ username: 'abc', email: 'xyz' } as any, {} as any),
+      service.create({ username: 'abc', email: 'xyz' } as any, multerFileMock),
     ).rejects.toThrowError(ConflictException);
   });
 
   it('create - should throw conflict email error', () => {
     expect(async () =>
-      service.create({ username: 'xyz', email: 'abc' } as any, {} as any),
+      service.create({ username: 'xyz', email: 'abc' } as any, multerFileMock),
     ).rejects.toThrowError(ConflictException);
   });
 
@@ -174,39 +174,24 @@ describe('UserService', () => {
   });
 
   it('create - should remove img from tmp if success', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      userMock.id = options.where.id;
-      return userMock;
-    });
-
     await service.create(newUserDtoMock, multerFileMock);
 
     expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('create - should remove img from tmp if error', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      userMock.id = options.where.id;
-      return userMock;
-    });
-
     await expect(async () => await service.create({} as any, multerFileMock)).rejects.toThrow();
     expect(removeFromTmpMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("create - shouldn't remove img from tmp if file is empty", async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
-      userMock.id = options.where.id;
-      return userMock;
-    });
-
     await service.create(newUserDtoMock, undefined);
 
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
   it('update - should throw bad request error if id is empty', async () => {
-    await expect(async () => service.update('', {} as any, {} as any)).rejects.toThrowError(
+    await expect(async () => service.update('', {} as any, multerFileMock)).rejects.toThrowError(
       BadRequestException,
     );
   });
@@ -220,38 +205,39 @@ describe('UserService', () => {
   });
 
   it('update - should change name', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async () => {
-      const user = new User();
-      user.firstName = 'aaa';
-      user.lastName = 'aaa';
-      user.bio = 'aaa';
-      return user;
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      userMock.id = options.where.id;
+      return userMock;
     });
 
-    const newData = {
-      firstName: 'bbb',
-      lastName: 'bbb',
+    const newData: any = {
+      firstName: 'new',
+      lastName: 'new',
     };
-    const result = await service.update(userId, newData as any, {} as any);
+    const result = await service.update(userId, newData, multerFileMock);
 
-    expect(result).toEqual({ ...newData, bio: 'aaa' });
+    expect(result).toEqual({
+      id: userId,
+      bio: userMock.bio,
+      ...newData,
+    });
   });
 
   it('update - should change bio', async () => {
-    jest.spyOn(User, 'findOne').mockImplementation(async () => {
-      const user = new User();
-      user.firstName = 'aaa';
-      user.lastName = 'aaa';
-      user.bio = 'aaa';
-      return user;
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      userMock.id = options.where.id;
+      return userMock;
     });
 
-    const newData = {
-      bio: 'bbb',
-    };
-    const result = await service.update(userId, newData as any, {} as any);
+    const newData: any = { bio: 'new' };
+    const result = await service.update(userId, newData, multerFileMock);
 
-    expect(result).toEqual({ ...newData, lastName: 'aaa', firstName: 'aaa' });
+    expect(result).toEqual({
+      id: userId,
+      firstName: userMock.firstName,
+      lastName: userMock.lastName,
+      ...newData,
+    });
   });
 
   it('update - should throw unauthorized while password is bad', async () => {
@@ -259,14 +245,18 @@ describe('UserService', () => {
 
     await expect(
       async () =>
-        await service.update(userId, { ...newPasswordDtoMock, password: 'BadPassword' }, {} as any),
+        await service.update(
+          userId,
+          { ...newPasswordDtoMock, password: 'BadPassword' },
+          multerFileMock,
+        ),
     ).rejects.toThrowError(UnauthorizedException);
   });
 
   it('update - should change password', async () => {
     jest.spyOn(User, 'findOne').mockResolvedValue(userMock);
 
-    const result = await service.update(userId, newPasswordDtoMock, {} as any);
+    const result = await service.update(userId, newPasswordDtoMock, multerFileMock);
 
     await expect(result).toBeDefined();
   });

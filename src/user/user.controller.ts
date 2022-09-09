@@ -131,7 +131,7 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
     @Param('id') id: string,
   ): Promise<CreateTravelResponse> {
-    return this.travelService.create(createTravelDto, id, file);
+    return this.travelService.create(id, createTravelDto, file);
   }
 
   @Post('/:id/friend')

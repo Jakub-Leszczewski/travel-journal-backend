@@ -16,7 +16,6 @@ import { FileManagementTravel } from '../common/utils/file-management/file-manag
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
-import { Post } from '../post/entities/post.entity';
 
 @Injectable()
 export class TravelService {
@@ -55,8 +54,8 @@ export class TravelService {
   }
 
   async create(
-    createTravelDto: CreateTravelDto,
     userId: string,
+    createTravelDto: CreateTravelDto,
     file: Express.Multer.File,
   ): Promise<CreateTravelResponse> {
     try {
@@ -162,9 +161,9 @@ export class TravelService {
       relations: ['user'],
     });
 
-    if (!travel || !travel.user) throw new NotFoundException();
+    if (!travel) throw new NotFoundException();
 
-    if (travel?.photoFn) {
+    if (travel?.photoFn && travel.user) {
       const filePath = FileManagementTravel.getTravelPhoto(
         travel.user.id,
         travel.id,
