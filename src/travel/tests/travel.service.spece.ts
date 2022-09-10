@@ -115,6 +115,29 @@ describe('TravelService', () => {
     expect(result.totalPages).toBe(Math.ceil(20 / config.itemsCountPerPage));
   });
 
+  it('findAllByUserId - Travel.findAndCount should get correct data', async () => {
+    const pageNumber = 2;
+    let findAndCountOptions: any = {
+      where: {},
+      relations: [],
+      order: {},
+    };
+    const findAndCountMock = async (options: any): Promise<any> => {
+      findAndCountOptions = options;
+      return [[], 0];
+    };
+
+    jest.spyOn(Travel, 'findAndCount').mockImplementation(findAndCountMock);
+
+    await service.findAllByUserId(userId, { page: pageNumber });
+
+    expect(findAndCountOptions.relations.includes('user')).toBe(true);
+    expect(findAndCountOptions.where).toBeDefined();
+    expect(findAndCountOptions.order.startAt).toBe('DESC');
+    expect(findAndCountOptions.skip).toBe(config.itemsCountPerPage * (pageNumber - 1));
+    expect(findAndCountOptions.take).toBe(config.itemsCountPerPage);
+  });
+
   it('getTravel - findOne should call with the appropriate options', async () => {
     const where: any = { id: travelId };
     let findOneOptionsMock: any = {};
