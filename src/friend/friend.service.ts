@@ -22,12 +22,8 @@ import { User } from '../user/entities/user.entity';
 import { UserHelperService } from '../user/user-helper.service';
 import { config } from '../config/config';
 import { Brackets, DataSource } from 'typeorm';
-
-interface StatusObj {
-  waiting?: boolean;
-  accepted?: boolean;
-  invitation?: boolean;
-}
+import { FindFriendsQueryDto } from './dto/find-friends-query.dto';
+import { SearchFriendsQueryDto } from './dto/search-friends-query.dto';
 
 type friendshipTwoSite = { friendshipUser: Friend; friendshipFriend: Friend };
 
@@ -38,18 +34,11 @@ export class FriendService {
     @Inject(forwardRef(() => DataSource)) private readonly dataSource: DataSource,
   ) {}
 
-  async findAllByUserId(id: string, page = 1, statusObj?: StatusObj): Promise<GetFriendsResponse> {
+  async findAllByUserId(
+    id: string,
+    { status, page }: FindFriendsQueryDto,
+  ): Promise<GetFriendsResponse> {
     if (!id) throw new BadRequestException();
-
-    const activeStatus = Object.entries(
-      statusObj ?? {
-        waiting: true,
-        accepted: true,
-        invitation: true,
-      },
-    )
-      .filter((e) => e[1])
-      .map((e) => e[0]);
 
     const [friendship, totalFriendsCount] = await this.dataSource
       .createQueryBuilder()
@@ -59,7 +48,7 @@ export class FriendService {
       .leftJoin('friendship.friend', 'friend')
       .where('friendship.userId=:id', { id })
       .andWhere('friendship.status IN (:...status)', {
-        status: [...activeStatus],
+        status: [...status],
       })
       .skip(config.itemsCountPerPage * (page - 1))
       .take(config.itemsCountPerPage)
@@ -169,8 +158,7 @@ export class FriendService {
 
   async searchNewFriends(
     id: string | undefined,
-    search: string,
-    page = 1,
+    { page, search }: SearchFriendsQueryDto,
   ): Promise<GetUserSearchResponse> {
     if (!search || search.length < 2)
       return {

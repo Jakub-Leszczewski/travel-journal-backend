@@ -24,6 +24,7 @@ import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
 import { TravelService } from '../travel/travel.service';
 import { UserHelperService } from '../user/user-helper.service';
+import { findTravelsQueryDto } from './dto/find-posts-query.dto';
 
 @Injectable()
 export class PostService {
@@ -41,7 +42,7 @@ export class PostService {
     return this.filter(post);
   }
 
-  async findAllByTravelId(id: string, page = 1): Promise<GetPostsResponse> {
+  async findAllByTravelId(id: string, { page }: findTravelsQueryDto): Promise<GetPostsResponse> {
     if (!id) throw new BadRequestException('id is empty');
 
     const [posts, totalPostsCount] = await Post.findAndCount({

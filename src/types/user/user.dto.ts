@@ -14,3 +14,7 @@ export interface UpdateUserDtoInterface {
   newPassword: string;
   photo: any;
 }
+
+export interface findIndexQueryDtoInterface {
+  page: number;
+}

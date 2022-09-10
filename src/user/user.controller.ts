@@ -40,6 +40,10 @@ import { CreateFriendResponse } from '../types';
 import { FriendService } from '../friend/friend.service';
 import { UserFriendAndOwnerGuard } from '../common/guards/user-friend-and-owner.guard';
 import { UserOwnerGuard } from '../common/guards/user-owner.guard';
+import { FindFriendsQueryDto } from '../friend/dto/find-friends-query.dto';
+import { findIndexQueryDto } from './dto/find-index-query.dto';
+import { SearchFriendsQueryDto } from '../friend/dto/search-friends-query.dto';
+import { findTravelsQueryDto } from '../travel/dto/find-travels-query.dto';
 
 @Controller('/user')
 export class UserController {
@@ -68,19 +72,18 @@ export class UserController {
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
   async getIndex(
     @Param('id') id: string,
-    @Query('page') page: number,
+    @Query() query: findIndexQueryDto,
   ): Promise<GetUserIndexResponse> {
-    return this.userService.getUserIndex(id, page || 1);
+    return this.userService.getUserIndex(id, query);
   }
 
   @Get('/:id/friend/search')
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
   async searchNewFriends(
     @Param('id') id: string,
-    @Query('search') search: string,
-    @Query('page') page: number,
+    @Query() query: SearchFriendsQueryDto,
   ): Promise<GetUserSearchResponse> {
-    return this.friendService.searchNewFriends(id, search, page || 1);
+    return this.friendService.searchNewFriends(id, query);
   }
 
   @Delete('/:id')
@@ -118,9 +121,9 @@ export class UserController {
   @UseGuards(JwtAuthGuard, UserFriendAndOwnerGuard)
   async findAllTravel(
     @Param('id') id: string,
-    @Query('page') page: number,
+    @Query() query: findTravelsQueryDto,
   ): Promise<GetTravelsResponse> {
-    return this.travelService.findAllByUserId(id, page || 1);
+    return this.travelService.findAllByUserId(id, query);
   }
 
   @Post('/:id/travel')
@@ -147,15 +150,8 @@ export class UserController {
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
   async getAllFriendshipByUserId(
     @Param('id') id: string,
-    @Query('waiting') waiting: boolean,
-    @Query('accepted') accepted: boolean,
-    @Query('invitation') invitation: boolean,
-    @Query('page') page: number,
+    @Query() query: FindFriendsQueryDto,
   ): Promise<GetFriendsResponse> {
-    return this.friendService.findAllByUserId(id, page || 1, {
-      waiting,
-      accepted,
-      invitation,
-    });
+    return this.friendService.findAllByUserId(id, query);
   }
 }

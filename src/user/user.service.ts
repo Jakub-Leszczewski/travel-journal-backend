@@ -31,6 +31,7 @@ import { config } from '../config/config';
 import { createReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
 import { FriendService } from '../friend/friend.service';
+import { findIndexQueryDto } from './dto/find-index-query.dto';
 
 @Injectable()
 export class UserService {
@@ -42,7 +43,7 @@ export class UserService {
     @Inject(DataSource) private dataSource: DataSource,
   ) {}
 
-  async getUserIndex(id: string, page = 1): Promise<GetUserIndexResponse> {
+  async getUserIndex(id: string, { page }: findIndexQueryDto): Promise<GetUserIndexResponse> {
     if (!id) throw new BadRequestException();
 
     const [posts, totalPostsCount] = await this.dataSource

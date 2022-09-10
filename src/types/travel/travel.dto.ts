@@ -17,3 +17,7 @@ export interface UpdateTravelDtoInterface {
   endAt: string;
   photo: any;
 }
+
+export interface findTravelsQueryDtoInterface {
+  page: number;
+}

@@ -16,6 +16,7 @@ import { FileManagementTravel } from '../common/utils/file-management/file-manag
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
+import { findTravelsQueryDto } from './dto/find-travels-query.dto';
 
 @Injectable()
 export class TravelService {
@@ -35,7 +36,7 @@ export class TravelService {
     });
   }
 
-  async findAllByUserId(id: string, page = 1): Promise<GetTravelsResponse> {
+  async findAllByUserId(id: string, { page }: findTravelsQueryDto): Promise<GetTravelsResponse> {
     if (!id) throw new BadRequestException();
 
     const [travels, totalTravelsCount] = await Travel.findAndCount({
