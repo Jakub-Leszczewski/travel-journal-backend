@@ -117,7 +117,7 @@ describe('PostService', () => {
   });
 
   it('findAllByTravelId - should throw bad request error if empty id', async () => {
-    await expect(async () => service.findAllByTravelId('')).rejects.toThrowError(
+    await expect(async () => service.findAllByTravelId('', { page: 1 })).rejects.toThrowError(
       BadRequestException,
     );
   });
@@ -129,7 +129,7 @@ describe('PostService', () => {
       return [[postMock, postMock, postMock], 20];
     });
 
-    const result = await service.findAllByTravelId(userId);
+    const result = await service.findAllByTravelId(userId, { page: 1 });
 
     expect(result.posts[0].authorId).toBe(userId);
     expect(result.totalPostsCount).toBe(20);

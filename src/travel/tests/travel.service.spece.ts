@@ -98,7 +98,9 @@ describe('TravelService', () => {
   });
 
   it('findAllByUserId - should throw bad request error if id is empty', async () => {
-    await expect(async () => service.findAllByUserId('')).rejects.toThrowError(BadRequestException);
+    await expect(async () => service.findAllByUserId('', { page: 1 })).rejects.toThrowError(
+      BadRequestException,
+    );
   });
 
   it('findAllByUserId - should return the correct data', async () => {
@@ -107,7 +109,7 @@ describe('TravelService', () => {
       return [[travelMock, travelMock, travelMock], 20];
     });
 
-    const result = await service.findAllByUserId(userId);
+    const result = await service.findAllByUserId(userId, { page: 1 });
     expect(result.travels[0].authorId).toBe(userId);
     expect(result.totalTravelsCount).toBe(20);
     expect(result.totalPages).toBe(Math.ceil(20 / config.itemsCountPerPage));

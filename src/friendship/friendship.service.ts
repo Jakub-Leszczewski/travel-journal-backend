@@ -8,51 +8,47 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateFriendDto } from './dto/create-friend.dto';
-import {
-  CreateFriendResponse,
-  DeleteFriendResponse,
-  FriendSaveResponseData,
-  FriendStatus,
-  GetFriendsResponse,
-  GetUserSearchResponse,
-  UpdateFriendResponse,
-} from '../types';
-import { Friend } from './entities/friend.entity';
+import { Friendship } from './entities/friendship.entity';
 import { User } from '../user/entities/user.entity';
 import { UserHelperService } from '../user/user-helper.service';
 import { config } from '../config/config';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, In } from 'typeorm';
 import { FindFriendsQueryDto } from './dto/find-friends-query.dto';
 import { SearchFriendsQueryDto } from './dto/search-friends-query.dto';
+import {
+  CreateFriendshipResponse,
+  DeleteFriendshipResponse,
+  FriendshipSaveResponseData,
+  FriendshipStatus,
+  GetFriendshipsResponse,
+  UpdateFriendshipResponse,
+  GetUserSearchResponse,
+} from '../types';
 
-type friendshipTwoSite = { friendshipUser: Friend; friendshipFriend: Friend };
+type friendshipTwoSite = { friendshipUser: Friendship; friendshipFriend: Friendship };
 
 @Injectable()
-export class FriendService {
+export class FriendshipService {
   constructor(
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
-    @Inject(forwardRef(() => DataSource)) private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
   ) {}
 
   async findAllByUserId(
     id: string,
     { status, page }: FindFriendsQueryDto,
-  ): Promise<GetFriendsResponse> {
+  ): Promise<GetFriendshipsResponse> {
     if (!id) throw new BadRequestException();
 
-    const [friendship, totalFriendsCount] = await this.dataSource
-      .createQueryBuilder()
-      .select(['friendship', 'friend', 'user'])
-      .from(Friend, 'friendship')
-      .leftJoin('friendship.user', 'user')
-      .leftJoin('friendship.friend', 'friend')
-      .where('friendship.userId=:id', { id })
-      .andWhere('friendship.status IN (:...status)', {
-        status: [...status],
-      })
-      .skip(config.itemsCountPerPage * (page - 1))
-      .take(config.itemsCountPerPage)
-      .getManyAndCount();
+    const [friendship, totalFriendsCount] = await Friendship.findAndCount({
+      relations: ['user', 'friend'],
+      where: {
+        user: { id },
+        status: In(status),
+      },
+      skip: config.itemsCountPerPage * (page - 1),
+      take: config.itemsCountPerPage,
+    });
 
     return {
       friends: friendship.map((e) => this.filter(e)),
@@ -64,7 +60,7 @@ export class FriendService {
   async getFriendshipTwoSite(userId: string, friendId: string): Promise<friendshipTwoSite> {
     if (!userId || !friendId) throw new Error('userId or friendId is empty');
 
-    const friendshipUser = await Friend.findOne({
+    const friendshipUser = await Friendship.findOne({
       where: {
         user: { id: userId },
         friend: { id: friendId },
@@ -72,7 +68,7 @@ export class FriendService {
       relations: ['user', 'friend'],
     });
 
-    const friendshipFriend = await Friend.findOne({
+    const friendshipFriend = await Friendship.findOne({
       where: {
         user: { id: friendId },
         friend: { id: userId },
@@ -91,7 +87,7 @@ export class FriendService {
   async getFriendshipTwoSiteById(id: string): Promise<friendshipTwoSite> {
     if (!id) throw new BadRequestException();
 
-    const friendship = await Friend.findOne({
+    const friendship = await Friendship.findOne({
       where: { id },
       relations: ['user', 'friend'],
     });
@@ -101,7 +97,7 @@ export class FriendService {
     return this.getFriendshipTwoSite(friendship.user.id, friendship.friend.id);
   }
 
-  async create(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendResponse> {
+  async create(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendshipResponse> {
     const friendshipExist = await this.checkFriendshipExist(userId, friendId);
     if (friendshipExist) throw new ConflictException();
 
@@ -109,31 +105,31 @@ export class FriendService {
     const friend = await User.findOne({ where: { id: friendId } });
     if (!user || !friend) throw new NotFoundException();
 
-    const friendship = new Friend();
+    const friendship = new Friendship();
     friendship.user = user;
     friendship.friend = friend;
-    friendship.status = FriendStatus.Waiting;
+    friendship.status = FriendshipStatus.Waiting;
     await friendship.save();
 
-    const friendshipRevert = new Friend();
+    const friendshipRevert = new Friendship();
     friendshipRevert.user = friend;
     friendshipRevert.friend = user;
-    friendshipRevert.status = FriendStatus.Invitation;
+    friendshipRevert.status = FriendshipStatus.Invitation;
     await friendshipRevert.save();
 
     return this.filter(friendship);
   }
 
-  async update(id: string): Promise<UpdateFriendResponse> {
+  async update(id: string): Promise<UpdateFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
     const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSiteById(id);
 
     if (!friendshipUser || !friendshipFriend) throw new NotFoundException();
-    if (friendshipUser.status !== FriendStatus.Invitation) throw new ForbiddenException();
+    if (friendshipUser.status !== FriendshipStatus.Invitation) throw new ForbiddenException();
 
-    friendshipUser.status = FriendStatus.Accepted;
-    friendshipFriend.status = FriendStatus.Accepted;
+    friendshipUser.status = FriendshipStatus.Accepted;
+    friendshipFriend.status = FriendshipStatus.Accepted;
 
     await friendshipUser.save();
     await friendshipFriend.save();
@@ -141,7 +137,7 @@ export class FriendService {
     return this.filter(friendshipUser);
   }
 
-  async remove(id: string): Promise<DeleteFriendResponse> {
+  async remove(id: string): Promise<DeleteFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
     const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSiteById(id);
@@ -200,7 +196,7 @@ export class FriendService {
     };
   }
 
-  filter(friendship: Friend): FriendSaveResponseData {
+  filter(friendship: Friendship): FriendshipSaveResponseData {
     const { user, friend, ...friendshipResponse } = friendship;
 
     return {

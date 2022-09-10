@@ -6,7 +6,7 @@ import { multerStorage } from '../common/utils/multer-storage';
 import { FileManagement } from '../common/utils/file-management/file-management';
 import { TravelModule } from '../travel/travel.module';
 import { PostModule } from '../post/post.module';
-import { FriendModule } from '../friend/friend.module';
+import { FriendshipModule } from '../friendship/friendship.module';
 import { UserHelperService } from './user-helper.service';
 
 @Module({
@@ -16,7 +16,7 @@ import { UserHelperService } from './user-helper.service';
     }),
     forwardRef(() => TravelModule),
     forwardRef(() => PostModule),
-    forwardRef(() => FriendModule),
+    forwardRef(() => FriendshipModule),
   ],
   controllers: [UserController],
   providers: [UserService, UserHelperService],

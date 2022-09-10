@@ -1,9 +1,9 @@
 import { BaseEntity, Column, Entity, JoinTable, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { FriendInterface, FriendStatus } from '../../types';
+import { FriendshipInterface, FriendshipStatus } from '../../types';
 import { User } from '../../user/entities/user.entity';
 
 @Entity()
-export class Friend extends BaseEntity implements FriendInterface {
+export class Friendship extends BaseEntity implements FriendshipInterface {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
@@ -21,7 +21,7 @@ export class Friend extends BaseEntity implements FriendInterface {
 
   @Column({
     type: 'enum',
-    enum: FriendStatus,
+    enum: FriendshipStatus,
   })
-  public status: FriendStatus;
+  public status: FriendshipStatus;
 }

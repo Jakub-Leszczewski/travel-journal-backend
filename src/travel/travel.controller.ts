@@ -31,7 +31,7 @@ import { ReadStream } from 'fs';
 import { CreatePostDto } from '../post/dto/create-post.dto';
 import { PostService } from '../post/post.service';
 import { TravelFriendAndOwnerGuard } from '../common/guards/travel-friend-and-owner.guard';
-import { findTravelsQueryDto } from '../post/dto/find-posts-query.dto';
+import { FindTravelsQueryDto } from '../post/dto/find-posts-query.dto';
 
 @Controller('/travel')
 @UseGuards(JwtAuthGuard)
@@ -87,7 +87,7 @@ export class TravelController {
   @UseGuards(TravelFriendAndOwnerGuard)
   async findAllPosts(
     @Param('id') id: string,
-    @Query() query: findTravelsQueryDto,
+    @Query() query: FindTravelsQueryDto,
   ): Promise<GetPostsResponse> {
     return this.postService.findAllByTravelId(id, query);
   }

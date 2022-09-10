@@ -18,6 +18,6 @@ export interface UpdateTravelDtoInterface {
   photo: any;
 }
 
-export interface findTravelsQueryDtoInterface {
+export interface FindTravelsQueryDtoInterface {
   page: number;
 }

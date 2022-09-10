@@ -13,7 +13,7 @@ import { compare } from 'bcrypt';
 import {
   CreateUserResponse,
   DeleteUserResponse,
-  FriendStatus,
+  FriendshipStatus,
   GetUserIndexResponse,
   GetUserResponse,
   GetUserStatsResponse,
@@ -30,20 +30,20 @@ import { Post } from '../post/entities/post.entity';
 import { config } from '../config/config';
 import { createReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
-import { FriendService } from '../friend/friend.service';
-import { findIndexQueryDto } from './dto/find-index-query.dto';
+import { FindIndexQueryDto } from './dto/find-index-query.dto';
+import { FriendshipService } from '../friendship/friendship.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    @Inject(forwardRef(() => FriendService)) private friendService: FriendService,
+    @Inject(forwardRef(() => FriendshipService)) private friendService: FriendshipService,
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
     @Inject(forwardRef(() => PostService)) private postService: PostService,
     @Inject(DataSource) private dataSource: DataSource,
   ) {}
 
-  async getUserIndex(id: string, { page }: findIndexQueryDto): Promise<GetUserIndexResponse> {
+  async getUserIndex(id: string, { page }: FindIndexQueryDto): Promise<GetUserIndexResponse> {
     if (!id) throw new BadRequestException();
 
     const [posts, totalPostsCount] = await this.dataSource
@@ -62,7 +62,7 @@ export class UserService {
               .leftJoin('friend.friendsRevert', 'friendship')
               .leftJoin('friendship.user', 'user')
               .where('user.id=:id', { id })
-              .andWhere('friendship.status = :status', { status: FriendStatus.Accepted })
+              .andWhere('friendship.status = :status', { status: FriendshipStatus.Accepted })
               .getQuery();
 
             return 'user.id IN' + subQuery;

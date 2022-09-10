@@ -1,7 +1,7 @@
 import { IsInt, IsOptional, Min } from 'class-validator';
-import { findIndexQueryDtoInterface } from '../../types';
+import { FindIndexQueryDtoInterface } from '../../types';
 
-export class findIndexQueryDto implements findIndexQueryDtoInterface {
+export class FindIndexQueryDto implements FindIndexQueryDtoInterface {
   @IsInt()
   @Min(1)
   @IsOptional()

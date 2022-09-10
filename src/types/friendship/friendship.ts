@@ -1,19 +1,19 @@
 import { UserInterface, UserPublicDataInterface } from '../user';
 
-export interface FriendInterface {
+export interface FriendshipInterface {
   id: string;
   user: UserInterface;
   friend: UserInterface;
-  status: FriendStatus;
+  status: FriendshipStatus;
 }
 
-export enum FriendStatus {
+export enum FriendshipStatus {
   Waiting = 'waiting',
   Accepted = 'accepted',
   Invitation = 'invitation',
 }
 
-export type FriendSaveResponseData = Omit<FriendInterface, 'user' | 'friend'> & {
+export type FriendshipSaveResponseData = Omit<FriendshipInterface, 'user' | 'friend'> & {
   userId: string;
   friend: UserPublicDataInterface;
 };

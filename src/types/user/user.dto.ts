@@ -15,6 +15,6 @@ export interface UpdateUserDtoInterface {
   photo: any;
 }
 
-export interface findIndexQueryDtoInterface {
+export interface FindIndexQueryDtoInterface {
   page: number;
 }

@@ -22,7 +22,6 @@ import {
   CreateTravelResponse,
   CreateUserResponse,
   DeleteUserResponse,
-  GetFriendsResponse,
   GetTravelsResponse,
   GetUserIndexResponse,
   GetUserResponse,
@@ -35,22 +34,22 @@ import { Express } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TravelService } from '../travel/travel.service';
 import { CreateTravelDto } from '../travel/dto/create-travel.dto';
-import { CreateFriendDto } from '../friend/dto/create-friend.dto';
-import { CreateFriendResponse } from '../types';
-import { FriendService } from '../friend/friend.service';
+import { CreateFriendDto } from '../friendship/dto/create-friend.dto';
+import { FriendshipService } from '../friendship/friendship.service';
 import { UserFriendAndOwnerGuard } from '../common/guards/user-friend-and-owner.guard';
 import { UserOwnerGuard } from '../common/guards/user-owner.guard';
-import { FindFriendsQueryDto } from '../friend/dto/find-friends-query.dto';
-import { findIndexQueryDto } from './dto/find-index-query.dto';
-import { SearchFriendsQueryDto } from '../friend/dto/search-friends-query.dto';
-import { findTravelsQueryDto } from '../travel/dto/find-travels-query.dto';
+import { FindFriendsQueryDto } from '../friendship/dto/find-friends-query.dto';
+import { FindIndexQueryDto } from './dto/find-index-query.dto';
+import { SearchFriendsQueryDto } from '../friendship/dto/search-friends-query.dto';
+import { FindTravelsQueryDto } from '../travel/dto/find-travels-query.dto';
+import { CreateFriendshipResponse, GetFriendshipsResponse } from '../types/friendship';
 
 @Controller('/user')
 export class UserController {
   constructor(
     @Inject(forwardRef(() => UserService)) private userService: UserService,
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
-    @Inject(forwardRef(() => FriendService)) private friendService: FriendService,
+    @Inject(forwardRef(() => FriendshipService)) private friendService: FriendshipService,
   ) {}
 
   @Post('/')
@@ -72,7 +71,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
   async getIndex(
     @Param('id') id: string,
-    @Query() query: findIndexQueryDto,
+    @Query() query: FindIndexQueryDto,
   ): Promise<GetUserIndexResponse> {
     return this.userService.getUserIndex(id, query);
   }
@@ -121,7 +120,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, UserFriendAndOwnerGuard)
   async findAllTravel(
     @Param('id') id: string,
-    @Query() query: findTravelsQueryDto,
+    @Query() query: FindTravelsQueryDto,
   ): Promise<GetTravelsResponse> {
     return this.travelService.findAllByUserId(id, query);
   }
@@ -142,7 +141,7 @@ export class UserController {
   async createFriendship(
     @Body() createFriendDto: CreateFriendDto,
     @Param('id') id: string,
-  ): Promise<CreateFriendResponse> {
+  ): Promise<CreateFriendshipResponse> {
     return this.friendService.create(id, createFriendDto);
   }
 
@@ -151,7 +150,7 @@ export class UserController {
   async getAllFriendshipByUserId(
     @Param('id') id: string,
     @Query() query: FindFriendsQueryDto,
-  ): Promise<GetFriendsResponse> {
+  ): Promise<GetFriendshipsResponse> {
     return this.friendService.findAllByUserId(id, query);
   }
 }

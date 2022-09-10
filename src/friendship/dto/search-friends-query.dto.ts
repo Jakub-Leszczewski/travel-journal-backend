@@ -1,7 +1,7 @@
-import { searchNewFriendsDtoInterface } from '../../types';
+import { searchNewFriendshipsDtoInterface } from '../../types';
 import { IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 
-export class SearchFriendsQueryDto implements searchNewFriendsDtoInterface {
+export class SearchFriendsQueryDto implements searchNewFriendshipsDtoInterface {
   @IsInt()
   @Min(1)
   @IsOptional()

@@ -122,11 +122,13 @@ describe('UserService', () => {
   });
 
   it('getUserIndex - should throw bad request error if id is empty', async () => {
-    await expect(async () => service.getUserIndex('')).rejects.toThrowError(BadRequestException);
+    await expect(async () => service.getUserIndex('', { page: 1 })).rejects.toThrowError(
+      BadRequestException,
+    );
   });
 
   it('getUserIndex - should return correct data', async () => {
-    const data = await service.getUserIndex(userId, 1);
+    const data = await service.getUserIndex(userId, { page: 1 });
 
     expect(data.posts.length).toBe(postsArr.length);
     expect(data.posts[0].user.id).toBe(userId);

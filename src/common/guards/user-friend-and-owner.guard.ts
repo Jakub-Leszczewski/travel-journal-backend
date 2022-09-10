@@ -8,7 +8,7 @@ import {
 import { Request } from 'express';
 import { User } from '../../user/entities/user.entity';
 import { DataSource } from 'typeorm';
-import { Friend } from '../../friend/entities/friend.entity';
+import { Friendship } from '../../friendship/entities/friendship.entity';
 
 @Injectable()
 export class UserFriendAndOwnerGuard implements CanActivate {
@@ -25,7 +25,7 @@ export class UserFriendAndOwnerGuard implements CanActivate {
     const friend = await this.dataSource
       .createQueryBuilder()
       .select(['friend.id', 'userFriend.id'])
-      .from(Friend, 'friend')
+      .from(Friendship, 'friend')
       .leftJoin('friend.friend', 'userFriend')
       .where('friend.userId=:id AND friend.status="accepted"', { id: ownerId })
       .getOne();
