@@ -6,10 +6,11 @@ import { Travel } from '../entities/travel.entity';
 import { User } from '../../user/entities/user.entity';
 import { config } from '../../config/config';
 import { FileManagementTravel } from '../../common/utils/file-management/file-management-travel';
+import { v4 as uuid } from 'uuid';
 
 const moduleMocker = new ModuleMocker(global);
-const userId = 'abc';
-const travelId = 'xyz';
+const userId = uuid();
+const travelId = uuid();
 const currDate = new Date();
 const userMock = new User();
 const travelMock = new Travel();

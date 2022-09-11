@@ -9,9 +9,9 @@ import { config } from '../../config/config';
 import { FileManagementPost } from '../../common/utils/file-management/file-management-post';
 import { TravelService } from '../../travel/travel.service';
 import { UserHelperService } from '../../user/user-helper.service';
+import { v4 as uuid } from 'uuid';
 
 const moduleMocker = new ModuleMocker(global);
-
 const userMock = new User();
 const travelMock = new Travel();
 const postMock = new Post();
@@ -23,9 +23,9 @@ const newPostData: any = {
   destination: 'abc',
 };
 
-const userId = 'abc';
-const travelId = 'xyz';
-const postId = 'xyz';
+const userId = uuid();
+const travelId = uuid();
+const postId = uuid();
 
 let removeFromTmpMock = jest.fn(async () => undefined);
 let removePostDirMock = jest.fn(async () => undefined);

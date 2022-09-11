@@ -4,14 +4,15 @@ import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
 import { DataSource } from 'typeorm';
 import { config } from '../../config/config';
 import { Friendship } from '../entities/friendship.entity';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { User } from '../../user/entities/user.entity';
 import { FriendshipStatus } from '../../types';
 import { UserHelperService } from '../../user/user-helper.service';
+import { v4 as uuid } from 'uuid';
 
-const userId = 'abc';
-const friendId = 'abc';
-const friendshipId = 'xyz';
+const userId = uuid();
+const friendId = uuid();
+const friendshipId = uuid();
 const findAllQueryMock = { page: 2, status: [] };
 const userMock = new User();
 const friendMock = new User();
@@ -67,10 +68,13 @@ describe('FriendService', () => {
 
     friendshipMock.id = friendshipId;
     friendshipMock.user = userMock;
-    friendshipMock.friend = userMock;
+    friendshipMock.friend = friendMock;
     friendshipMock.status = FriendshipStatus.Accepted;
 
     service = module.get<FriendshipService>(FriendshipService);
+
+    jest.spyOn(Friendship.prototype, 'save').mockResolvedValue(undefined);
+    jest.spyOn(Friendship.prototype, 'remove').mockResolvedValue(undefined);
   });
 
   it('should be defined', () => {
@@ -118,5 +122,60 @@ describe('FriendService', () => {
     expect(findAndCountOptions.where).toBeDefined();
     expect(findAndCountOptions.skip).toBe(config.itemsCountPerPage * (pageNumber - 1));
     expect(findAndCountOptions.take).toBe(config.itemsCountPerPage);
+  });
+
+  it('invite - should throw bad request error if empty id', async () => {
+    await expect(async () => await service.invite('', {} as any)).rejects.toThrowError(
+      BadRequestException,
+    );
+  });
+
+  it('invite - should throw conflict error if friendship exist', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(1);
+
+    await expect(
+      async () => await service.invite(userId, { friendId } as any),
+    ).rejects.toThrowError(ConflictException);
+  });
+
+  it('invite - should throw not found error if user is empty', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(0);
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      if (options.where.id === userId) return null;
+      if (options.where.id === friendId) return {} as any;
+    });
+
+    await expect(
+      async () => await service.invite(userId, { friendId } as any),
+    ).rejects.toThrowError(NotFoundException);
+  });
+
+  it('invite - should throw not found error if friend is empty', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(0);
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      if (options.where.id === userId) return {} as any;
+      if (options.where.id === friendId) return null;
+    });
+
+    await expect(
+      async () => await service.invite(userId, { friendId } as any),
+    ).rejects.toThrowError(NotFoundException);
+  });
+
+  it('invite - should return the correct data', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(0);
+    jest.spyOn(User, 'findOne').mockImplementation(async (options: any) => {
+      if (options.where.id === userId) return userMock;
+      if (options.where.id === friendId) return friendMock;
+    });
+
+    const result = await service.invite(userId, { friendId });
+
+    expect(result).toEqual({
+      id: undefined,
+      userId,
+      friend: { id: friendId },
+      status: FriendshipStatus.Waiting,
+    });
   });
 });

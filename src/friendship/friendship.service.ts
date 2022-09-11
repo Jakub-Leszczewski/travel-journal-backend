@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -62,7 +61,7 @@ export class FriendshipService {
   }
 
   async invite(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendshipResponse> {
-    if (!userId || !friendId) throw new BadRequestException();
+    if (!userId) throw new BadRequestException();
 
     await this.checkFriendshipExistAndThrow(userId, friendId);
 
@@ -93,7 +92,6 @@ export class FriendshipService {
     if (!id) throw new BadRequestException();
 
     const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
-
     if (!friendshipUser || !friendshipFriend) throw new NotFoundException();
 
     friendshipUser.status = FriendshipStatus.Accepted;
@@ -117,11 +115,16 @@ export class FriendshipService {
   }
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
-    return !!(await this.getFriendshipTwoSidesByIds(userId, friendId));
+    return !!(await Friendship.count({
+      where: {
+        user: { id: userId },
+        friend: { id: friendId },
+      },
+    }));
   }
 
   async checkFriendshipExistAndThrow(userId: string, friendId: string) {
-    const friendshipExist = this.checkFriendshipExist(userId, friendId);
+    const friendshipExist = await this.checkFriendshipExist(userId, friendId);
 
     if (friendshipExist) throw new ConflictException();
   }

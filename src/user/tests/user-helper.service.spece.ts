@@ -3,11 +3,11 @@ import { ModuleMocker, MockFunctionMetadata } from 'jest-mock';
 import { UserHelperService } from '../user-helper.service';
 import { User } from '../entities/user.entity';
 import { ConflictException } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
 
 const moduleMocker = new ModuleMocker(global);
-
 const userDataMock = new User();
-userDataMock.id = 'abc';
+userDataMock.id = uuid();
 userDataMock.firstName = 'abc';
 userDataMock.lastName = 'abc';
 userDataMock.username = 'abc';
