@@ -12,7 +12,12 @@ import { Post } from '../../post/entities/post.entity';
 import { Friendship } from '../../friendship/entities/friendship.entity';
 import { FriendshipStatus } from '../../types';
 
-export class PostFriendAndOwnerGuard implements CanActivate {
+/**
+ * Allows only if authenticated user is post's owner or he is a friend of the post's owner
+ *
+ * **req.param.id** --> post's id
+ * */
+export class PostFriendsAndOwnerGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -34,14 +39,13 @@ export class PostFriendAndOwnerGuard implements CanActivate {
 
     if (!postSimple) throw new NotFoundException();
 
-    const friend = await this.dataSource
-      .createQueryBuilder()
-      .select(['friend.id', 'userFriend.id'])
-      .from(Friendship, 'friend')
-      .leftJoin('friend.friend', 'userFriend')
-      .where('friend.userId=:id', { id: postSimple.travel.user.id })
-      .andWhere('friend.status=:status', { status: FriendshipStatus.Accepted })
-      .getOne();
+    const friend = await Friendship.findOne({
+      where: {
+        user: { id: postSimple.travel.user.id },
+        status: FriendshipStatus.Accepted,
+      },
+      relations: ['friend'],
+    });
 
     return postSimple.travel.user.id === user.id || user.id === friend?.friend.id;
   }

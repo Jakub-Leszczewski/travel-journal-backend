@@ -10,6 +10,11 @@ import { User } from '../../user/entities/user.entity';
 import { DataSource } from 'typeorm';
 import { Post } from '../../post/entities/post.entity';
 
+/**
+ * Allows only if authenticated user is post's owner
+ *
+ * **req.param.id** --> post's id
+ * */
 export class PostOwnerGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
 

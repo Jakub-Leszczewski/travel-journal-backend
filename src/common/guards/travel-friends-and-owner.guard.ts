@@ -10,8 +10,14 @@ import { User } from '../../user/entities/user.entity';
 import { Travel } from '../../travel/entities/travel.entity';
 import { DataSource } from 'typeorm';
 import { Friendship } from '../../friendship/entities/friendship.entity';
+import { FriendshipStatus } from '../../types';
 
-export class TravelFriendAndOwnerGuard implements CanActivate {
+/**
+ * Allows only if authenticated user is travel's owner or he is a friend of the travel's owner
+ *
+ * **req.param.id** --> travel's id
+ * */
+export class TravelFriendsAndOwnerGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,16 +38,13 @@ export class TravelFriendAndOwnerGuard implements CanActivate {
 
     if (!travelSimple) throw new NotFoundException();
 
-    const friend = await this.dataSource
-      .createQueryBuilder()
-      .select(['friend.id', 'userFriend.id'])
-      .from(Friendship, 'friend')
-      .leftJoin('friend.friend', 'userFriend')
-      .where('friend.userId=:id', {
-        id: travelSimple.user.id,
-      })
-      .andWhere('friend.status="accepted"')
-      .getOne();
+    const friend = await Friendship.findOne({
+      where: {
+        user: { id: travelSimple.user.id },
+        status: FriendshipStatus.Accepted,
+      },
+      relations: ['friend'],
+    });
 
     return travelSimple.user.id === user.id || friend.friend.id === user.id;
   }

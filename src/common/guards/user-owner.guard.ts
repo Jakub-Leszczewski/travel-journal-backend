@@ -2,6 +2,11 @@ import { Injectable, CanActivate, ExecutionContext, BadRequestException } from '
 import { Request } from 'express';
 import { User } from '../../user/entities/user.entity';
 
+/**
+ * Allows only if authenticated user is user's owner
+ *
+ * **req.param.id** --> user's id
+ * */
 @Injectable()
 export class UserOwnerGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

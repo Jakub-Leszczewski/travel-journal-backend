@@ -36,13 +36,13 @@ import { TravelService } from '../travel/travel.service';
 import { CreateTravelDto } from '../travel/dto/create-travel.dto';
 import { CreateFriendDto } from '../friendship/dto/create-friend.dto';
 import { FriendshipService } from '../friendship/friendship.service';
-import { UserFriendAndOwnerGuard } from '../common/guards/user-friend-and-owner.guard';
+import { FriendsAndOwnerGuard } from '../common/guards/friends-and-owner.guard';
 import { UserOwnerGuard } from '../common/guards/user-owner.guard';
 import { FindFriendsQueryDto } from '../friendship/dto/find-friends-query.dto';
 import { FindIndexQueryDto } from './dto/find-index-query.dto';
 import { SearchFriendsQueryDto } from '../friendship/dto/search-friends-query.dto';
 import { FindTravelsQueryDto } from '../travel/dto/find-travels-query.dto';
-import { CreateFriendshipResponse, GetFriendshipsResponse } from '../types/friendship';
+import { CreateFriendshipResponse, GetFriendshipsResponse } from '../types';
 
 @Controller('/user')
 export class UserController {
@@ -62,7 +62,7 @@ export class UserController {
   }
 
   @Get('/:id')
-  @UseGuards(JwtAuthGuard, UserFriendAndOwnerGuard)
+  @UseGuards(JwtAuthGuard, FriendsAndOwnerGuard)
   async findOne(@Param('id') id: string): Promise<GetUserResponse> {
     return this.userService.findOne(id);
   }
@@ -117,7 +117,7 @@ export class UserController {
   }
 
   @Get('/:id/travel')
-  @UseGuards(JwtAuthGuard, UserFriendAndOwnerGuard)
+  @UseGuards(JwtAuthGuard, FriendsAndOwnerGuard)
   async findAllTravel(
     @Param('id') id: string,
     @Query() query: FindTravelsQueryDto,
@@ -142,7 +142,7 @@ export class UserController {
     @Body() createFriendDto: CreateFriendDto,
     @Param('id') id: string,
   ): Promise<CreateFriendshipResponse> {
-    return this.friendService.create(id, createFriendDto);
+    return this.friendService.invite(id, createFriendDto);
   }
 
   @Get('/:id/friend')

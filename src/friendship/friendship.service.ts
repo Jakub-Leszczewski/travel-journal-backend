@@ -61,36 +61,40 @@ export class FriendshipService {
     };
   }
 
-  async create(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendshipResponse> {
-    const friendshipExist = await this.checkFriendshipExist(userId, friendId);
-    if (friendshipExist) throw new ConflictException();
+  async invite(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendshipResponse> {
+    if (!userId || !friendId) throw new BadRequestException();
+
+    await this.checkFriendshipExistAndThrow(userId, friendId);
 
     const user = await User.findOne({ where: { id: userId } });
     const friend = await User.findOne({ where: { id: friendId } });
     if (!user || !friend) throw new NotFoundException();
 
     const friendship = new Friendship();
-    friendship.user = user;
-    friendship.friend = friend;
     friendship.status = FriendshipStatus.Waiting;
     await friendship.save();
 
+    friendship.user = user;
+    friendship.friend = friend;
+    await friendship.save();
+
     const friendshipRevert = new Friendship();
+    friendshipRevert.status = FriendshipStatus.Invitation;
+    await friendshipRevert.save();
+
     friendshipRevert.user = friend;
     friendshipRevert.friend = user;
-    friendshipRevert.status = FriendshipStatus.Invitation;
     await friendshipRevert.save();
 
     return this.filter(friendship);
   }
 
-  async update(id: string): Promise<UpdateFriendshipResponse> {
+  async accept(id: string): Promise<UpdateFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
     const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
 
     if (!friendshipUser || !friendshipFriend) throw new NotFoundException();
-    if (friendshipUser.status !== FriendshipStatus.Invitation) throw new ForbiddenException();
 
     friendshipUser.status = FriendshipStatus.Accepted;
     friendshipFriend.status = FriendshipStatus.Accepted;
@@ -114,6 +118,12 @@ export class FriendshipService {
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
     return !!(await this.getFriendshipTwoSidesByIds(userId, friendId));
+  }
+
+  async checkFriendshipExistAndThrow(userId: string, friendId: string) {
+    const friendshipExist = this.checkFriendshipExist(userId, friendId);
+
+    if (friendshipExist) throw new ConflictException();
   }
 
   async searchNewFriends(
