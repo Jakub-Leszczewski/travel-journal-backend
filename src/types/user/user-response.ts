@@ -1,4 +1,5 @@
-import { ForeignPostSaveData, UserPublicDataInterface, UserSaveResponseData } from './user';
+import { UserPublicDataInterface, UserSaveResponseData } from './user';
+import { ForeignPostSaveData } from '../post';
 
 export type GetUserSearchResponse = {
   users: UserPublicDataInterface[];

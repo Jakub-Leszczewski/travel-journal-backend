@@ -1,4 +1,4 @@
-import { FriendshipStatus } from './friendship';
+import { FriendshipStatus } from './friendship-status';
 
 export interface CreateFriendshipDtoInterface {
   friendId: string;

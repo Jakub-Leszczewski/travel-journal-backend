@@ -136,7 +136,7 @@ describe('PostService', () => {
     expect(result.totalPages).toBe(Math.ceil(20 / config.itemsCountPerPage));
   });
 
-  it('findAllByUserId - Travel.findAndCount should get correct data', async () => {
+  it('findAllByTravelId - Post.findAndCount should get correct data', async () => {
     const pageNumber = 2;
     let findAndCountOptions: any = {
       where: {},

@@ -1,4 +1,5 @@
-import { TravelInterface } from '../travel';
+import { TravelInterface, TravelSaveResponseData } from '../travel';
+import { UserPublicDataInterface } from '../user';
 
 export interface PostInterface {
   id: string;
@@ -14,4 +15,10 @@ export type PostSaveResponseData = Omit<PostInterface, 'photoFn' | 'travel'> & {
   photo: string;
   authorId: string;
   travelId: string;
+};
+
+export type ForeignPostSaveData = Omit<PostSaveResponseData, 'authorId' | 'travelId'> & {
+  travel: TravelSaveResponseData;
+} & {
+  user: UserPublicDataInterface;
 };

@@ -23,9 +23,13 @@ import {
   GetFriendshipsResponse,
   UpdateFriendshipResponse,
   GetUserSearchResponse,
+  FriendshipInterface,
 } from '../types';
 
-type friendshipTwoSite = { friendshipUser: Friendship; friendshipFriend: Friendship };
+export type FriendshipTwoSite = {
+  friendshipUser: Friendship;
+  friendshipFriend: Friendship;
+};
 
 @Injectable()
 export class FriendshipService {
@@ -57,46 +61,6 @@ export class FriendshipService {
     };
   }
 
-  async getFriendshipTwoSite(userId: string, friendId: string): Promise<friendshipTwoSite> {
-    if (!userId || !friendId) throw new Error('userId or friendId is empty');
-
-    const friendshipUser = await Friendship.findOne({
-      where: {
-        user: { id: userId },
-        friend: { id: friendId },
-      },
-      relations: ['user', 'friend'],
-    });
-
-    const friendshipFriend = await Friendship.findOne({
-      where: {
-        user: { id: friendId },
-        friend: { id: userId },
-      },
-    });
-
-    if ((!friendshipUser && friendshipFriend) || (friendshipUser && !friendshipFriend)) {
-      throw new Error(`incomplete friendship ${friendshipUser?.id} - ${friendshipFriend?.id}`);
-    }
-
-    if (!friendshipUser && !friendshipFriend) return null;
-
-    return { friendshipUser, friendshipFriend };
-  }
-
-  async getFriendshipTwoSiteById(id: string): Promise<friendshipTwoSite> {
-    if (!id) throw new BadRequestException();
-
-    const friendship = await Friendship.findOne({
-      where: { id },
-      relations: ['user', 'friend'],
-    });
-
-    if (!friendship || !friendship.user || !friendship.friend) throw new NotFoundException();
-
-    return this.getFriendshipTwoSite(friendship.user.id, friendship.friend.id);
-  }
-
   async create(userId: string, { friendId }: CreateFriendDto): Promise<CreateFriendshipResponse> {
     const friendshipExist = await this.checkFriendshipExist(userId, friendId);
     if (friendshipExist) throw new ConflictException();
@@ -123,7 +87,7 @@ export class FriendshipService {
   async update(id: string): Promise<UpdateFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
-    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSiteById(id);
+    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
 
     if (!friendshipUser || !friendshipFriend) throw new NotFoundException();
     if (friendshipUser.status !== FriendshipStatus.Invitation) throw new ForbiddenException();
@@ -140,7 +104,7 @@ export class FriendshipService {
   async remove(id: string): Promise<DeleteFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
-    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSiteById(id);
+    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
 
     if (friendshipUser) await friendshipUser.remove();
     if (friendshipFriend) await friendshipFriend.remove();
@@ -149,7 +113,7 @@ export class FriendshipService {
   }
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
-    return !!(await this.getFriendshipTwoSite(userId, friendId));
+    return !!(await this.getFriendshipTwoSidesByIds(userId, friendId));
   }
 
   async searchNewFriends(
@@ -194,6 +158,49 @@ export class FriendshipService {
       totalPages: Math.ceil(totalUsersCount / config.itemsCountPerPage),
       totalUsersCount,
     };
+  }
+
+  async getFriendshipTwoSidesByIds(userId: string, friendId: string): Promise<FriendshipTwoSite> {
+    if (!userId || !friendId) throw new Error('userId or friendId is empty');
+
+    const friendshipUser = await Friendship.findOne({
+      where: {
+        user: { id: userId },
+        friend: { id: friendId },
+      },
+      relations: ['user', 'friend'],
+    });
+
+    const friendshipFriend = await Friendship.findOne({
+      where: {
+        user: { id: friendId },
+        friend: { id: userId },
+      },
+    });
+
+    if ((!friendshipUser && friendshipFriend) || (friendshipUser && !friendshipFriend)) {
+      throw new Error(`incomplete friendship ${friendshipUser?.id} - ${friendshipFriend?.id}`);
+    }
+
+    if (!friendshipUser && !friendshipFriend) return null;
+
+    return { friendshipUser, friendshipFriend };
+  }
+
+  async getFriendshipTwoSides(where: Partial<FriendshipInterface>): Promise<FriendshipTwoSite> {
+    if (!where) throw new Error('where is empty');
+
+    const friendship = await this.getFriendship(where);
+    if (!friendship || !friendship.user || !friendship.friend) throw new NotFoundException();
+
+    return this.getFriendshipTwoSidesByIds(friendship.user.id, friendship.friend.id);
+  }
+
+  async getFriendship(where: Partial<FriendshipInterface>): Promise<Friendship> {
+    return await Friendship.findOne({
+      where,
+      relations: ['user', 'friend'],
+    });
   }
 
   filter(friendship: Friendship): FriendshipSaveResponseData {
