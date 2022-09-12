@@ -26,7 +26,7 @@ import { FileManagementUser } from '../common/utils/file-management/file-managem
 import { UserHelperService } from './user-helper.service';
 import { TravelService } from '../travel/travel.service';
 import { PostService } from '../post/post.service';
-import { Brackets, DataSource } from 'typeorm';
+import { Brackets, DataSource, FindOptionsWhere } from 'typeorm';
 import { Post } from '../post/entities/post.entity';
 import { config } from '../config/config';
 import { createReadStream } from 'fs';
@@ -44,7 +44,7 @@ export class UserService {
     @Inject(DataSource) private dataSource: DataSource,
   ) {}
 
-  async getUser(where: Partial<UserInterface>): Promise<User> {
+  async getUser(where: FindOptionsWhere<User>): Promise<User> {
     return User.findOne({ where });
   }
 

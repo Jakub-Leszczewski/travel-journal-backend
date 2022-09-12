@@ -24,6 +24,7 @@ import { FileManagement } from '../common/utils/file-management/file-management'
 import { TravelService } from '../travel/travel.service';
 import { UserHelperService } from '../user/user-helper.service';
 import { FindTravelsQueryDto } from './dto/find-posts-query.dto';
+import { FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class PostService {
@@ -32,7 +33,7 @@ export class PostService {
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
   ) {}
 
-  async getPost(where: Partial<PostInterface>): Promise<Post> {
+  async getPost(where: FindOptionsWhere<Post>): Promise<Post> {
     return Post.findOne({
       where,
       relations: ['travel', 'travel.user'],

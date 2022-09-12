@@ -11,7 +11,7 @@ import { Friendship } from './entities/friendship.entity';
 import { User } from '../user/entities/user.entity';
 import { UserHelperService } from '../user/user-helper.service';
 import { config } from '../config/config';
-import { Brackets, DataSource, In } from 'typeorm';
+import { Brackets, DataSource, FindOptionsWhere, In } from 'typeorm';
 import { FindFriendsQueryDto } from './dto/find-friends-query.dto';
 import { SearchFriendsQueryDto } from './dto/search-friends-query.dto';
 import {
@@ -37,7 +37,7 @@ export class FriendshipService {
     @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
   ) {}
 
-  async getFriendship(where: Partial<FriendshipInterface>): Promise<Friendship> {
+  async getFriendship(where: FindOptionsWhere<Friendship>): Promise<Friendship> {
     return await Friendship.findOne({
       where,
       relations: ['user', 'friend'],
@@ -125,6 +125,8 @@ export class FriendshipService {
   }
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
+    if (!userId || !friendId) throw new Error('userId or friendId is empty');
+
     return !!(await Friendship.count({
       where: {
         user: { id: userId },
@@ -134,8 +136,9 @@ export class FriendshipService {
   }
 
   async checkFriendshipExistAndThrow(userId: string, friendId: string) {
-    const friendshipExist = await this.checkFriendshipExist(userId, friendId);
+    if (!userId || !friendId) throw new Error('userId or friendId is empty');
 
+    const friendshipExist = await this.checkFriendshipExist(userId, friendId);
     if (friendshipExist) throw new ConflictException();
   }
 
@@ -197,11 +200,9 @@ export class FriendshipService {
       relations: ['user', 'friend'],
     });
 
-    const friendshipFriend = await Friendship.findOne({
-      where: {
-        user: { id: friendId },
-        friend: { id: userId },
-      },
+    const friendshipFriend = await this.getFriendship({
+      user: { id: friendId },
+      friend: { id: userId },
     });
 
     if ((!friendshipUser && friendshipFriend) || (friendshipUser && !friendshipFriend)) {

@@ -12,7 +12,6 @@ import {
   DeleteTravelResponse,
   GetTravelResponse,
   GetTravelsResponse,
-  PostInterface,
   TravelSaveResponseData,
   UpdateTravelResponse,
 } from '../types';
@@ -23,10 +22,18 @@ import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
 import { FindTravelsQueryDto } from './dto/find-travels-query.dto';
 import { UserService } from '../user/user.service';
+import { FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class TravelService {
   constructor(@Inject(forwardRef(() => UserService)) private userService: UserService) {}
+
+  async getTravel(where: FindOptionsWhere<Travel>): Promise<Travel> {
+    return Travel.findOne({
+      where,
+      relations: ['user'],
+    });
+  }
 
   async findOne(id: string): Promise<GetTravelResponse> {
     if (!id) throw new BadRequestException();
@@ -35,13 +42,6 @@ export class TravelService {
     if (!travel) throw new NotFoundException();
 
     return this.filter(travel);
-  }
-
-  async getTravel(where: Partial<PostInterface>): Promise<Travel> {
-    return Travel.findOne({
-      where,
-      relations: ['user'],
-    });
   }
 
   async findAllByUserId(id: string, { page }: FindTravelsQueryDto): Promise<GetTravelsResponse> {

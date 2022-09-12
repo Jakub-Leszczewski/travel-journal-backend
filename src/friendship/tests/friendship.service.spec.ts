@@ -88,6 +88,22 @@ describe('FriendService', () => {
     expect(service).toBeDefined();
   });
 
+  it('getFriendship - findOne should call with the appropriate options', async () => {
+    const where: any = { id: friendshipId };
+    let findOneOptionsMock: any = {};
+
+    jest.spyOn(Friendship, 'findOne').mockImplementation((options: any) => {
+      findOneOptionsMock = options;
+      return {} as any;
+    });
+
+    await service.getFriendship(where);
+
+    expect(findOneOptionsMock.relations.includes('user')).toBe(true);
+    expect(findOneOptionsMock.relations.includes('friend')).toBe(true);
+    expect(findOneOptionsMock.where).toEqual(where);
+  });
+
   it('findAllByUserId - should throw bad request error if empty id', async () => {
     await expect(async () => service.findAllByUserId('', findAllQueryMock)).rejects.toThrowError(
       BadRequestException,
@@ -235,5 +251,71 @@ describe('FriendService', () => {
       friend: { id: friendId },
       status: FriendshipStatus.Accepted,
     });
+  });
+
+  it('checkFriendshipExist - should throw error if userId is empty', async () => {
+    await expect(async () => service.checkFriendshipExist('', friendId)).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('checkFriendshipExist - should throw error if friendId is empty', async () => {
+    await expect(async () => service.checkFriendshipExist(userId, '')).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('checkFriendshipExist - should throw error if friendId and userId is empty', async () => {
+    await expect(async () => service.checkFriendshipExist('', '')).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('checkFriendshipExist - count should call with the appropriate options', async () => {
+    let countOptionsMock: any = {};
+
+    jest.spyOn(Friendship, 'count').mockImplementation(async (options: any) => {
+      countOptionsMock = options;
+      return 2;
+    });
+
+    await service.checkFriendshipExist(userId, friendId);
+
+    expect(countOptionsMock.where).toEqual({
+      user: { id: userId },
+      friend: { id: friendId },
+    });
+  });
+
+  it('checkFriendshipExist - should return boolean value(true)', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(2);
+
+    const result = await service.checkFriendshipExist(userId, friendId);
+
+    expect(result).toBe(true);
+  });
+
+  it('checkFriendshipExist - should return boolean value(false)', async () => {
+    jest.spyOn(Friendship, 'count').mockResolvedValue(0);
+
+    const result = await service.checkFriendshipExist(userId, friendId);
+
+    expect(result).toBe(false);
+  });
+
+  it('checkFriendshipExistAndThrow - should throw conflict error', async () => {
+    jest.spyOn(FriendshipService.prototype, 'checkFriendshipExist').mockResolvedValue(true);
+
+    await expect(async () =>
+      service.checkFriendshipExistAndThrow(userId, friendId),
+    ).rejects.toThrowError(ConflictException);
+  });
+
+  it("checkFriendshipExistAndThrow - shouldn't throw conflict error", async () => {
+    jest.spyOn(FriendshipService.prototype, 'checkFriendshipExist').mockResolvedValue(false);
+
+    const result = await service.checkFriendshipExistAndThrow(userId, friendId);
+
+    expect(result).not.toBeDefined();
   });
 });

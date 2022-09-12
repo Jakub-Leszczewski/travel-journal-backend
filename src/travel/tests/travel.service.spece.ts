@@ -8,7 +8,7 @@ import { config } from '../../config/config';
 import { FileManagementTravel } from '../../common/utils/file-management/file-management-travel';
 import { v4 as uuid } from 'uuid';
 import { UserService } from '../../user/user.service';
-import { UserInterface } from '../../types';
+import { FindOptionsWhere } from 'typeorm';
 
 const moduleMocker = new ModuleMocker(global);
 const userId = uuid();
@@ -41,7 +41,7 @@ describe('TravelService', () => {
       .useMocker((token) => {
         if (token === UserService) {
           return {
-            getUser: async (where: Partial<UserInterface>) => User.findOne({ where }),
+            getUser: async (where: FindOptionsWhere<User>) => User.findOne({ where }),
           };
         }
 

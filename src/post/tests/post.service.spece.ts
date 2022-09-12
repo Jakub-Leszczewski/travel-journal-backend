@@ -10,6 +10,7 @@ import { FileManagementPost } from '../../common/utils/file-management/file-mana
 import { TravelService } from '../../travel/travel.service';
 import { UserHelperService } from '../../user/user-helper.service';
 import { v4 as uuid } from 'uuid';
+import { FindOptionsWhere } from 'typeorm';
 
 const moduleMocker = new ModuleMocker(global);
 const userMock = new User();
@@ -41,7 +42,7 @@ describe('PostService', () => {
       .useMocker((token) => {
         if (token === TravelService) {
           return {
-            getTravel: async (where: any) => Travel.findOne({ where }),
+            getTravel: async (where: FindOptionsWhere<Travel>) => Travel.findOne({ where }),
             filter: (travel: Travel) => ({ id: travel.id }),
           };
         }

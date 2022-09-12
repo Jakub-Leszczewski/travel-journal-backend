@@ -14,9 +14,7 @@ import { User } from '../entities/user.entity';
 import { UserHelperService } from '../user-helper.service';
 import { FileManagementUser } from '../../common/utils/file-management/file-management-user';
 import { TravelService } from '../../travel/travel.service';
-import { Travel } from '../../travel/entities/travel.entity';
 import { v4 as uuid } from 'uuid';
-import { Post } from '../../post/entities/post.entity';
 
 const moduleMocker = new ModuleMocker(global);
 let removeFromTmpMock = jest.fn(async () => undefined);
