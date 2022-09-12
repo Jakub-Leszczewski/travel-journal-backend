@@ -93,19 +93,35 @@ describe('PostService', () => {
     expect(service).toBeDefined();
   });
 
+  it('getPost - findOne should call with the appropriate options', async () => {
+    const where: any = { id: postId };
+    let findOneOptionsMock: any = {};
+
+    jest.spyOn(Post, 'findOne').mockImplementation((options: any) => {
+      findOneOptionsMock = options;
+      return {} as any;
+    });
+
+    await service.getPost(where);
+
+    expect(findOneOptionsMock.relations.includes('travel')).toBe(true);
+    expect(findOneOptionsMock.relations.includes('travel.user')).toBe(true);
+    expect(findOneOptionsMock.where).toEqual(where);
+  });
+
   it('findOne - should throw bad request error if empty id', async () => {
     await expect(async () => service.findOne('')).rejects.toThrowError(BadRequestException);
   });
 
   it('findOne - should throw not found error if post is empty', async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(null);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.findOne(postId)).rejects.toThrowError(NotFoundException);
   });
 
   it('findOne - should return record with given id', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async (options: any) => {
-      postMock.id = options.where.id;
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
+      postMock.id = where.id;
       return postMock;
     });
 
@@ -158,22 +174,6 @@ describe('PostService', () => {
     expect(findAndCountOptions.order.createdAt).toBe('DESC');
     expect(findAndCountOptions.skip).toBe(config.itemsCountPerPage * (pageNumber - 1));
     expect(findAndCountOptions.take).toBe(config.itemsCountPerPage);
-  });
-
-  it('getPost - findOne should call with the appropriate options', async () => {
-    const where: any = { id: postId };
-    let findOneOptionsMock: any = {};
-
-    jest.spyOn(Post, 'findOne').mockImplementation((options: any) => {
-      findOneOptionsMock = options;
-      return {} as any;
-    });
-
-    await service.getPost(where);
-
-    expect(findOneOptionsMock.relations.includes('travel')).toBe(true);
-    expect(findOneOptionsMock.relations.includes('travel.user')).toBe(true);
-    expect(findOneOptionsMock.where).toEqual(where);
   });
 
   it('create - should throw bad request error if empty id', async () => {
@@ -250,7 +250,7 @@ describe('PostService', () => {
   });
 
   it('update - should throw not found error if post empty', async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(null);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.update(postId, {} as any, fileMock)).rejects.toThrowError(
       NotFoundException,
@@ -258,7 +258,7 @@ describe('PostService', () => {
   });
 
   it('update - should throw not found error if travel empty', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async () => {
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async () => {
       postMock.travel = undefined;
       return postMock;
     });
@@ -269,7 +269,7 @@ describe('PostService', () => {
   });
 
   it('update - should throw not found error if user empty', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async () => {
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async () => {
       postMock.travel.user = undefined;
       return postMock;
     });
@@ -280,8 +280,8 @@ describe('PostService', () => {
   });
 
   it('update - should return data with given id', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async (options: any) => {
-      postMock.id = options.where.id;
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
+      postMock.id = where.id;
       return postMock;
     });
 
@@ -303,7 +303,7 @@ describe('PostService', () => {
   });
 
   it('update - should remove img from tmp if success', async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(postMock);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
     await service.update(postId, {} as any, fileMock);
 
@@ -320,7 +320,7 @@ describe('PostService', () => {
   });
 
   it("update - shouldn't remove img from tmp if file is empty", async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(postMock);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
     await service.create(postId, {} as any, undefined);
 
@@ -332,13 +332,13 @@ describe('PostService', () => {
   });
 
   it('remove - should throw not found error if travel is empty', async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(null);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.remove(postId)).rejects.toThrowError(NotFoundException);
   });
 
   it('remove - should throw not found error if user is empty', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async () => {
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async () => {
       postMock.travel.user = undefined;
       return postMock;
     });
@@ -347,8 +347,8 @@ describe('PostService', () => {
   });
 
   it('remove - should return data with given id', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async (options: any) => {
-      postMock.id = options.where.id;
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
+      postMock.id = where.id;
       return postMock;
     });
 
@@ -359,8 +359,8 @@ describe('PostService', () => {
   });
 
   it('remove - should remove travel dir', async () => {
-    jest.spyOn(Post, 'findOne').mockImplementation(async (options: any) => {
-      postMock.id = options.where.id;
+    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
+      postMock.id = where.id;
       return postMock;
     });
 
@@ -374,7 +374,7 @@ describe('PostService', () => {
   });
 
   it('getPhoto - should throw not found error if post is empty', async () => {
-    jest.spyOn(Post, 'findOne').mockResolvedValue(null);
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.getPhoto(travelId)).rejects.toThrowError(NotFoundException);
   });

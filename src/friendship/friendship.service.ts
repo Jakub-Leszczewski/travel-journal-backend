@@ -37,6 +37,13 @@ export class FriendshipService {
     @Inject(forwardRef(() => DataSource)) private dataSource: DataSource,
   ) {}
 
+  async getFriendship(where: Partial<FriendshipInterface>): Promise<Friendship> {
+    return await Friendship.findOne({
+      where,
+      relations: ['user', 'friend'],
+    });
+  }
+
   async findAllByUserId(
     id: string,
     { status, page }: FindFriendsQueryDto,
@@ -106,7 +113,10 @@ export class FriendshipService {
   async remove(id: string): Promise<DeleteFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
-    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
+    const friendships = await this.getFriendshipTwoSides({ id });
+    if (!friendships) throw new NotFoundException();
+
+    const { friendshipUser, friendshipFriend } = friendships;
 
     if (friendshipUser) await friendshipUser.remove();
     if (friendshipFriend) await friendshipFriend.remove();
@@ -173,7 +183,10 @@ export class FriendshipService {
     };
   }
 
-  async getFriendshipTwoSidesByIds(userId: string, friendId: string): Promise<FriendshipTwoSite> {
+  async getFriendshipTwoSidesByIds(
+    userId: string,
+    friendId: string,
+  ): Promise<FriendshipTwoSite | null> {
     if (!userId || !friendId) throw new Error('userId or friendId is empty');
 
     const friendshipUser = await Friendship.findOne({
@@ -200,20 +213,15 @@ export class FriendshipService {
     return { friendshipUser, friendshipFriend };
   }
 
-  async getFriendshipTwoSides(where: Partial<FriendshipInterface>): Promise<FriendshipTwoSite> {
+  async getFriendshipTwoSides(
+    where: Partial<FriendshipInterface>,
+  ): Promise<FriendshipTwoSite | null> {
     if (!where) throw new Error('where is empty');
 
     const friendship = await this.getFriendship(where);
     if (!friendship || !friendship.user || !friendship.friend) throw new NotFoundException();
 
     return this.getFriendshipTwoSidesByIds(friendship.user.id, friendship.friend.id);
-  }
-
-  async getFriendship(where: Partial<FriendshipInterface>): Promise<Friendship> {
-    return await Friendship.findOne({
-      where,
-      relations: ['user', 'friend'],
-    });
   }
 
   filter(friendship: Friendship): FriendshipSaveResponseData {

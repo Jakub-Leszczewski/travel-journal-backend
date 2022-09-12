@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTravelDto } from './dto/create-travel.dto';
 import { UpdateTravelDto } from './dto/update-travel.dto';
 import {
@@ -11,15 +17,17 @@ import {
   UpdateTravelResponse,
 } from '../types';
 import { Travel } from './entities/travel.entity';
-import { User } from '../user/entities/user.entity';
 import { FileManagementTravel } from '../common/utils/file-management/file-management-travel';
 import { config } from '../config/config';
 import { createReadStream, ReadStream } from 'fs';
 import { FileManagement } from '../common/utils/file-management/file-management';
 import { FindTravelsQueryDto } from './dto/find-travels-query.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class TravelService {
+  constructor(@Inject(forwardRef(() => UserService)) private userService: UserService) {}
+
   async findOne(id: string): Promise<GetTravelResponse> {
     if (!id) throw new BadRequestException();
 
@@ -62,7 +70,7 @@ export class TravelService {
     try {
       if (!userId) throw new BadRequestException();
 
-      const user = await User.findOne({ where: { id: userId } });
+      const user = await this.userService.getUser({ id: userId });
       if (!user) throw new NotFoundException();
 
       if (new Date(createTravelDto.startAt).getTime() > new Date(createTravelDto.endAt).getTime()) {
@@ -157,11 +165,7 @@ export class TravelService {
   async getPhoto(id: string): Promise<ReadStream> {
     if (!id) throw new BadRequestException();
 
-    const travel = await Travel.findOne({
-      where: { id },
-      relations: ['user'],
-    });
-
+    const travel = await this.getTravel({ id });
     if (!travel) throw new NotFoundException();
 
     if (travel?.photoFn && travel.user) {

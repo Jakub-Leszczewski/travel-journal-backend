@@ -18,6 +18,7 @@ import {
   GetUserResponse,
   GetUserStatsResponse,
   UpdateUserResponse,
+  UserInterface,
 } from '../types';
 import { createHashPwd } from '../common/utils/create-hash-pwd';
 import { Express } from 'express';
@@ -42,6 +43,10 @@ export class UserService {
     @Inject(forwardRef(() => PostService)) private postService: PostService,
     @Inject(DataSource) private dataSource: DataSource,
   ) {}
+
+  async getUser(where: Partial<UserInterface>): Promise<User> {
+    return User.findOne({ where });
+  }
 
   async getUserIndex(id: string, { page }: FindIndexQueryDto): Promise<GetUserIndexResponse> {
     if (!id) throw new BadRequestException();
@@ -87,7 +92,7 @@ export class UserService {
   async findOne(id: string): Promise<GetUserResponse> {
     if (!id) throw new BadRequestException();
 
-    const user = await User.findOne({ where: { id } });
+    const user = await this.getUser({ id });
     if (!user) throw new NotFoundException();
 
     return this.userHelperService.filter(user);
@@ -141,7 +146,7 @@ export class UserService {
     try {
       if (!id) throw new BadRequestException();
 
-      const user = await User.findOne({ where: { id } });
+      const user = await this.getUser({ id });
       if (!user) throw new NotFoundException();
 
       user.firstName = updateUserDto.firstName ?? user.firstName;
@@ -180,7 +185,7 @@ export class UserService {
   async remove(id: string): Promise<DeleteUserResponse> {
     if (!id) throw new BadRequestException();
 
-    const user = await User.findOne({ where: { id } });
+    const user = await this.getUser({ id });
     if (!user) throw new NotFoundException();
 
     await FileManagementUser.removeUserDir(id);
@@ -204,7 +209,7 @@ export class UserService {
   async getPhoto(id: string) {
     if (!id) throw new BadRequestException();
 
-    const user = await User.findOne({ where: { id } });
+    const user = await this.getUser({ id });
     if (!user) throw new NotFoundException();
 
     if (user?.photoFn) {

@@ -210,4 +210,30 @@ describe('FriendService', () => {
       status: FriendshipStatus.Accepted,
     });
   });
+
+  it('remove - should throw bad request error', async () => {
+    await expect(async () => service.remove('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('remove - should throw not found error', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue(null);
+
+    await expect(async () => service.remove(friendshipId)).rejects.toThrowError(NotFoundException);
+  });
+
+  it('remove - should return the correct data', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
+      friendshipUser: friendshipMock,
+      friendshipFriend: friendshipRevertMock,
+    });
+
+    const result = await service.remove(userId);
+
+    expect(result).toEqual({
+      id: friendshipId,
+      userId,
+      friend: { id: friendId },
+      status: FriendshipStatus.Accepted,
+    });
+  });
 });

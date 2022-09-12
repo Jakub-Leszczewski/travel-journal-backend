@@ -16,7 +16,6 @@ import {
   PostInterface,
   PostSaveResponseData,
 } from '../types';
-import { Travel } from '../travel/entities/travel.entity';
 import { Post } from './entities/post.entity';
 import { FileManagementPost } from '../common/utils/file-management/file-management-post';
 import { config } from '../config/config';
@@ -32,6 +31,13 @@ export class PostService {
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
     @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
   ) {}
+
+  async getPost(where: Partial<PostInterface>): Promise<Post> {
+    return Post.findOne({
+      where,
+      relations: ['travel', 'travel.user'],
+    });
+  }
 
   async findOne(id: string): Promise<GetPostResponse> {
     if (!id) throw new BadRequestException();
@@ -60,13 +66,6 @@ export class PostService {
       totalPages: Math.ceil(totalPostsCount / config.itemsCountPerPage),
       totalPostsCount,
     };
-  }
-
-  async getPost(where: Partial<PostInterface>): Promise<Post> {
-    return Post.findOne({
-      where,
-      relations: ['travel', 'travel.user'],
-    });
   }
 
   async create(
