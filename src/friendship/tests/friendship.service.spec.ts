@@ -13,10 +13,12 @@ import { v4 as uuid } from 'uuid';
 const userId = uuid();
 const friendId = uuid();
 const friendshipId = uuid();
+const friendshipRevertId = uuid();
 const findAllQueryMock = { page: 2, status: [] };
 const userMock = new User();
 const friendMock = new User();
 const friendshipMock = new Friendship();
+const friendshipRevertMock = new Friendship();
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -70,6 +72,11 @@ describe('FriendService', () => {
     friendshipMock.user = userMock;
     friendshipMock.friend = friendMock;
     friendshipMock.status = FriendshipStatus.Accepted;
+
+    friendshipRevertMock.id = friendshipRevertId;
+    friendshipRevertMock.user = friendMock;
+    friendshipRevertMock.friend = userMock;
+    friendshipRevertMock.status = FriendshipStatus.Accepted;
 
     service = module.get<FriendshipService>(FriendshipService);
 
@@ -176,6 +183,31 @@ describe('FriendService', () => {
       userId,
       friend: { id: friendId },
       status: FriendshipStatus.Waiting,
+    });
+  });
+
+  it('accept - should throw bad request error if empty id', async () => {
+    await expect(async () => await service.accept('')).rejects.toThrowError(BadRequestException);
+  });
+
+  it('accept - should throw not found error if friendship dont exist', async () => {
+    jest.spyOn(Friendship, 'findOne').mockResolvedValue(null);
+    await expect(async () => await service.accept(userId)).rejects.toThrowError(NotFoundException);
+  });
+
+  it('accept - should return the correct data', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
+      friendshipUser: friendshipMock,
+      friendshipFriend: friendshipRevertMock,
+    });
+
+    const result = await service.accept(userId);
+
+    expect(result).toEqual({
+      id: friendshipId,
+      userId,
+      friend: { id: friendId },
+      status: FriendshipStatus.Accepted,
     });
   });
 });
