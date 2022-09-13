@@ -23,12 +23,8 @@ const multerFileMock: any = { filename: `${userId}.png` };
 const newUserDtoMock: any = { username: 'xyz', email: 'xyz', password: 'abc' };
 const newPasswordDtoMock: any = { password: 'Password1234', newPassword: 'Password1234' };
 const userMock = new User();
-const postsArr = [
-  { user: { id: userId } },
-  { user: { id: userId } },
-  { user: { id: userId } },
-  { user: { id: userId } },
-];
+const postArrAmount = 20;
+const postsArr = [{ user: { id: userId } }, { user: { id: userId } }, { user: { id: userId } }];
 
 describe('UserService', () => {
   let service: UserService;
@@ -49,7 +45,7 @@ describe('UserService', () => {
             orWhere: () => createQueryBuilder,
             skip: () => createQueryBuilder,
             take: () => createQueryBuilder,
-            getManyAndCount: async () => [postsArr, postsArr.length],
+            getManyAndCount: async () => [postsArr, postArrAmount],
           };
 
           return {
@@ -142,12 +138,13 @@ describe('UserService', () => {
   });
 
   it('getUserIndex - should return correct data', async () => {
-    const data = await service.getUserIndex(userId, { page: 1 });
+    const result = await service.getUserIndex(userId, { page: 1 });
 
-    expect(data.posts.length).toBe(postsArr.length);
-    expect(data.posts[0].user.id).toBe(userId);
-    expect(data.totalPages).toBe(Math.ceil(data.posts.length / config.itemsCountPerPage));
-    expect(data.totalPostsCount).toBe(postsArr.length);
+    expect(result).toEqual({
+      posts: [...postsArr],
+      totalPages: Math.ceil(postArrAmount / config.itemsCountPerPage),
+      totalPostsCount: postArrAmount,
+    });
   });
 
   it('findOne - should throw bad request error if id is empty', async () => {

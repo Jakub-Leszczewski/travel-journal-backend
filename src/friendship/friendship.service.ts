@@ -26,8 +26,8 @@ import {
 } from '../types';
 
 export type FriendshipTwoSite = {
-  friendshipUser: Friendship;
-  friendshipFriend: Friendship;
+  friendship: Friendship;
+  friendshipRevert: Friendship;
 };
 
 @Injectable()
@@ -98,16 +98,16 @@ export class FriendshipService {
   async accept(id: string): Promise<UpdateFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
-    const { friendshipUser, friendshipFriend } = await this.getFriendshipTwoSides({ id });
-    if (!friendshipUser || !friendshipFriend) throw new NotFoundException();
+    const { friendship, friendshipRevert } = await this.getFriendshipTwoSides({ id });
+    if (!friendship || !friendshipRevert) throw new NotFoundException();
 
-    friendshipUser.status = FriendshipStatus.Accepted;
-    friendshipFriend.status = FriendshipStatus.Accepted;
+    friendship.status = FriendshipStatus.Accepted;
+    friendshipRevert.status = FriendshipStatus.Accepted;
 
-    await friendshipUser.save();
-    await friendshipFriend.save();
+    await friendship.save();
+    await friendshipRevert.save();
 
-    return this.filter(friendshipUser);
+    return this.filter(friendship);
   }
 
   async remove(id: string): Promise<DeleteFriendshipResponse> {
@@ -116,12 +116,12 @@ export class FriendshipService {
     const friendships = await this.getFriendshipTwoSides({ id });
     if (!friendships) throw new NotFoundException();
 
-    const { friendshipUser, friendshipFriend } = friendships;
+    const { friendship, friendshipRevert } = friendships;
 
-    if (friendshipUser) await friendshipUser.remove();
-    if (friendshipFriend) await friendshipFriend.remove();
+    if (friendship) await friendship.remove();
+    if (friendshipRevert) await friendshipRevert.remove();
 
-    return this.filter(friendshipUser);
+    return this.filter(friendship);
   }
 
   async checkFriendshipExist(userId: string, friendId: string): Promise<boolean> {
@@ -146,7 +146,9 @@ export class FriendshipService {
     id: string | undefined,
     { page, search }: SearchFriendsQueryDto,
   ): Promise<GetUserSearchResponse> {
-    if (!search || search.length < 2)
+    if (!id) throw new BadRequestException();
+
+    if (search.length < 2)
       return {
         users: [],
         totalPages: 0,
@@ -192,26 +194,23 @@ export class FriendshipService {
   ): Promise<FriendshipTwoSite | null> {
     if (!userId || !friendId) throw new Error('userId or friendId is empty');
 
-    const friendshipUser = await Friendship.findOne({
-      where: {
-        user: { id: userId },
-        friend: { id: friendId },
-      },
-      relations: ['user', 'friend'],
+    const friendship = await this.getFriendship({
+      user: { id: userId },
+      friend: { id: friendId },
     });
 
-    const friendshipFriend = await this.getFriendship({
+    const friendshipRevert = await this.getFriendship({
       user: { id: friendId },
       friend: { id: userId },
     });
 
-    if ((!friendshipUser && friendshipFriend) || (friendshipUser && !friendshipFriend)) {
-      throw new Error(`incomplete friendship ${friendshipUser?.id} - ${friendshipFriend?.id}`);
+    if ((!friendship && friendshipRevert) || (friendship && !friendshipRevert)) {
+      throw new Error(`incomplete friendship ${friendship?.id} - ${friendshipRevert?.id}`);
     }
 
-    if (!friendshipUser && !friendshipFriend) return null;
+    if (!friendship && !friendshipRevert) return null;
 
-    return { friendshipUser, friendshipFriend };
+    return { friendship, friendshipRevert };
   }
 
   async getFriendshipTwoSides(

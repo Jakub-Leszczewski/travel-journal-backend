@@ -9,6 +9,5 @@ export class SearchFriendsQueryDto implements searchNewFriendshipsDtoInterface {
 
   @IsString()
   @Length(1, 64)
-  @IsOptional()
   public search: string;
 }

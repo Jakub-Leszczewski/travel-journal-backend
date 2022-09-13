@@ -20,6 +20,9 @@ const friendMock = new User();
 const friendshipMock = new Friendship();
 const friendshipRevertMock = new Friendship();
 
+const userArrAmount = 20;
+const userArr = [userMock, userMock, userMock];
+
 const moduleMocker = new ModuleMocker(global);
 
 describe('FriendService', () => {
@@ -39,9 +42,10 @@ describe('FriendService', () => {
             orderBy: () => createQueryBuilder,
             where: () => createQueryBuilder,
             orWhere: () => createQueryBuilder,
+            andWhere: () => createQueryBuilder,
             skip: () => createQueryBuilder,
             take: () => createQueryBuilder,
-            // getManyAndCount: async () => [postsArr, postsArr.length],
+            getManyAndCount: async () => [[...userArr], userArrAmount],
           };
 
           return {
@@ -213,8 +217,8 @@ describe('FriendService', () => {
 
   it('accept - should return the correct data', async () => {
     jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
-      friendshipUser: friendshipMock,
-      friendshipFriend: friendshipRevertMock,
+      friendship: friendshipMock,
+      friendshipRevert: friendshipRevertMock,
     });
 
     const result = await service.accept(userId);
@@ -239,8 +243,8 @@ describe('FriendService', () => {
 
   it('remove - should return the correct data', async () => {
     jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
-      friendshipUser: friendshipMock,
-      friendshipFriend: friendshipRevertMock,
+      friendship: friendshipMock,
+      friendshipRevert: friendshipRevertMock,
     });
 
     const result = await service.remove(userId);
@@ -317,5 +321,31 @@ describe('FriendService', () => {
     const result = await service.checkFriendshipExistAndThrow(userId, friendId);
 
     expect(result).not.toBeDefined();
+  });
+
+  it('searchNewFriends - should throw bad request error if id is empty', async () => {
+    await expect(async () =>
+      service.searchNewFriends('', { page: 1, search: '' }),
+    ).rejects.toThrowError(BadRequestException);
+  });
+
+  it('searchNewFriends - should return empty data if search is empty', async () => {
+    const result = await service.searchNewFriends(userId, { page: 1, search: '' });
+
+    expect(result).toEqual({
+      users: [],
+      totalPages: 0,
+      totalUsersCount: 0,
+    });
+  });
+
+  it('searchNewFriends - should return correct data', async () => {
+    const result = await service.searchNewFriends(userId, { page: 1, search: 'abc' });
+
+    expect(result).toEqual({
+      users: [...userArr],
+      totalPages: Math.ceil(userArrAmount / config.itemsCountPerPage),
+      totalUsersCount: userArrAmount,
+    });
   });
 });
