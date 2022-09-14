@@ -216,7 +216,7 @@ describe('FriendService', () => {
   });
 
   it('accept - should return the correct data', async () => {
-    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValueOnce({
       friendship: friendshipMock,
       friendshipRevert: friendshipRevertMock,
     });
@@ -236,13 +236,13 @@ describe('FriendService', () => {
   });
 
   it('remove - should throw not found error', async () => {
-    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue(null);
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValueOnce(null);
 
     await expect(async () => service.remove(friendshipId)).rejects.toThrowError(NotFoundException);
   });
 
   it('remove - should return the correct data', async () => {
-    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValue({
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValueOnce({
       friendship: friendshipMock,
       friendshipRevert: friendshipRevertMock,
     });
@@ -346,6 +346,120 @@ describe('FriendService', () => {
       users: [...userArr],
       totalPages: Math.ceil(userArrAmount / config.itemsCountPerPage),
       totalUsersCount: userArrAmount,
+    });
+  });
+
+  it('getFriendshipTwoSidesByIds - should throw error if userId is empty', async () => {
+    await expect(async () => service.getFriendshipTwoSidesByIds('', friendId)).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('getFriendshipTwoSidesByIds - should throw error if friendId is empty', async () => {
+    await expect(async () => service.getFriendshipTwoSidesByIds(userId, '')).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('getFriendshipTwoSidesByIds - should throw error if userId and friendId is empty', async () => {
+    await expect(async () => service.getFriendshipTwoSidesByIds('', '')).rejects.toThrowError(
+      'userId or friendId is empty',
+    );
+  });
+
+  it('getFriendshipTwoSidesByIds - should throw error if friendship is incomplete', async () => {
+    jest
+      .spyOn(FriendshipService.prototype, 'getFriendship')
+      .mockImplementation(async (where: any) => {
+        if (where.friend?.id === userId && where.user?.id === friendId) {
+          return friendshipRevertMock;
+        }
+        return null;
+      });
+
+    await expect(async () =>
+      service.getFriendshipTwoSidesByIds(userId, friendId),
+    ).rejects.toThrowError(`incomplete friendship ${undefined} - ${friendshipRevertId}`);
+  });
+
+  it('getFriendshipTwoSidesByIds - should throw error if friendship is incomplete(revert)', async () => {
+    jest
+      .spyOn(FriendshipService.prototype, 'getFriendship')
+      .mockImplementation(async (where: any) => {
+        if (where.user?.id === userId && where.friend?.id === friendId) return friendshipMock;
+        return null;
+      });
+
+    await expect(async () =>
+      service.getFriendshipTwoSidesByIds(userId, friendId),
+    ).rejects.toThrowError(`incomplete friendship ${friendshipId} - ${undefined}`);
+  });
+
+  it("getFriendshipTwoSidesByIds - should return null if friendship doesn't exist", async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendship').mockResolvedValue(null);
+
+    const result = await service.getFriendshipTwoSidesByIds(userId, friendId);
+
+    expect(result).toBeNull();
+  });
+
+  it('getFriendshipTwoSidesByIds - should return correct two sides of friendships', async () => {
+    jest
+      .spyOn(FriendshipService.prototype, 'getFriendship')
+      .mockImplementation(async (where: any) => {
+        if (where.user?.id === userId && where.friend?.id === friendId) return friendshipMock;
+        if (where.friend?.id === userId && where.user?.id === friendId) return friendshipRevertMock;
+        return null;
+      });
+
+    const result = await service.getFriendshipTwoSidesByIds(userId, friendId);
+
+    expect(result).toEqual({ friendship: friendshipMock, friendshipRevert: friendshipRevertMock });
+  });
+
+  it('getFriendshipTwoSides - should return null if friendship is null', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendship').mockResolvedValue(null);
+
+    const result = await service.getFriendshipTwoSides({});
+
+    expect(result).toBeNull();
+  });
+
+  it('getFriendshipTwoSides - should return null if user is null', async () => {
+    friendshipMock.user = undefined;
+    jest.spyOn(FriendshipService.prototype, 'getFriendship').mockResolvedValue(friendshipMock);
+
+    const result = await service.getFriendshipTwoSides({});
+
+    expect(result).toBeNull();
+  });
+
+  it('getFriendshipTwoSides - should return null if friend is null', async () => {
+    friendshipMock.friend = undefined;
+    jest.spyOn(FriendshipService.prototype, 'getFriendship').mockResolvedValue(friendshipMock);
+
+    const result = await service.getFriendshipTwoSides({});
+
+    expect(result).toBeNull();
+  });
+
+  it('getFriendshipTwoSides - should return null if friend and user is null', async () => {
+    friendshipMock.user = undefined;
+    friendshipMock.friend = undefined;
+    jest.spyOn(FriendshipService.prototype, 'getFriendship').mockResolvedValue(friendshipMock);
+
+    const result = await service.getFriendshipTwoSides({});
+
+    expect(result).toBeNull();
+  });
+
+  it('filter - should return save data', () => {
+    const { user, friend, ...friendshipResponse } = friendshipMock;
+
+    expect(service.filter(friendshipMock)).toEqual({
+      ...friendshipResponse,
+      userId: user.id,
+      friend: friend,
     });
   });
 });

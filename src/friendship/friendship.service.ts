@@ -98,8 +98,10 @@ export class FriendshipService {
   async accept(id: string): Promise<UpdateFriendshipResponse> {
     if (!id) throw new BadRequestException();
 
-    const { friendship, friendshipRevert } = await this.getFriendshipTwoSides({ id });
-    if (!friendship || !friendshipRevert) throw new NotFoundException();
+    const friendships = await this.getFriendshipTwoSides({ id });
+    if (!friendships) throw new NotFoundException();
+
+    const { friendship, friendshipRevert } = friendships;
 
     friendship.status = FriendshipStatus.Accepted;
     friendshipRevert.status = FriendshipStatus.Accepted;
@@ -216,10 +218,8 @@ export class FriendshipService {
   async getFriendshipTwoSides(
     where: Partial<FriendshipInterface>,
   ): Promise<FriendshipTwoSite | null> {
-    if (!where) throw new Error('where is empty');
-
     const friendship = await this.getFriendship(where);
-    if (!friendship || !friendship.user || !friendship.friend) throw new NotFoundException();
+    if (!friendship || !friendship.user || !friendship.friend) return null;
 
     return this.getFriendshipTwoSidesByIds(friendship.user.id, friendship.friend.id);
   }
