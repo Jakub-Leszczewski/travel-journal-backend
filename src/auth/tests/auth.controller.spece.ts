@@ -3,6 +3,7 @@ import { AuthController } from '../auth.controller';
 import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
 import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
+import { v4 as uuid } from 'uuid';
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -11,8 +12,9 @@ const logoutResult = 'logout';
 const logoutAllResult = 'logoutAll';
 const findOneResult = 'findOne';
 
-const resMock: any = {};
-const userMock: any = {};
+const userId = uuid();
+const userMock: any = { id: userId };
+const resMock: any = { res: true };
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -24,15 +26,19 @@ describe('AuthController', () => {
       .useMocker((token) => {
         if (token === AuthService) {
           return {
-            login: jest.fn().mockResolvedValue(loginResult),
-            logout: jest.fn().mockResolvedValue(logoutResult),
-            logoutAll: jest.fn().mockResolvedValue(logoutAllResult),
+            login: jest.fn(async (user: any, res: any) => ({ user, res, result: loginResult })),
+            logout: jest.fn(async (res: any) => ({ res, result: logoutResult })),
+            logoutAll: jest.fn(async (user: any, res: any) => ({
+              user,
+              res,
+              result: logoutAllResult,
+            })),
           };
         }
 
         if (token === UserService) {
           return {
-            findOne: jest.fn(() => findOneResult),
+            findOne: jest.fn(async (userId) => ({ userId, result: findOneResult })),
           };
         }
 
@@ -52,26 +58,32 @@ describe('AuthController', () => {
   });
 
   it('login - should calls to authService.login', async () => {
-    const result = await controller.login(userMock, resMock);
+    const result: any = await controller.login(userMock, resMock);
 
-    expect(result).toBe(loginResult);
+    expect(result.result).toBe(loginResult);
+    expect(result.user).toEqual(userMock);
+    expect(result.res).toEqual(resMock);
   });
 
   it('logout - should calls to authService.logout', async () => {
-    const result = await controller.logout(resMock);
+    const result: any = await controller.logout(resMock);
 
-    expect(result).toBe(logoutResult);
+    expect(result.result).toBe(logoutResult);
+    expect(result.res).toEqual(resMock);
   });
 
   it('logoutAll - should calls to authService.logoutAll', async () => {
-    const result = await controller.logoutAll(userMock, resMock);
+    const result: any = await controller.logoutAll(userMock, resMock);
 
-    expect(result).toBe(logoutAllResult);
+    expect(result.result).toBe(logoutAllResult);
+    expect(result.user).toEqual(userMock);
+    expect(result.res).toEqual(resMock);
   });
 
   it('getAuthUser - should calls to userService.findOne', async () => {
-    const result = await controller.getAuthUser(userMock);
+    const result: any = await controller.getAuthUser(userMock);
 
-    expect(result).toBe(findOneResult);
+    expect(result.result).toBe(findOneResult);
+    expect(result.userId).toBe(userId);
   });
 });

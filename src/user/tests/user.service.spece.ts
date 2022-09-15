@@ -104,10 +104,10 @@ describe('UserService', () => {
 
     removeFromTmpMock = jest.fn(async () => undefined);
 
-    jest.spyOn(FileManagementUser, 'removeUserPhoto').mockReturnValue(undefined);
-    jest.spyOn(FileManagementUser, 'saveUserPhoto').mockReturnValue({ filename: 'xyz' } as any);
+    jest.spyOn(FileManagementUser, 'removeUserPhoto').mockResolvedValue(undefined);
+    jest.spyOn(FileManagementUser, 'saveUserPhoto').mockResolvedValue({ filename: 'xyz' } as any);
     jest.spyOn(FileManagementUser, 'removeFromTmp').mockImplementation(removeFromTmpMock);
-    jest.spyOn(FileManagementUser, 'removeUserDir').mockReturnValue(undefined);
+    jest.spyOn(FileManagementUser, 'removeUserDir').mockResolvedValue(undefined);
     jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
     jest.spyOn(User.prototype, 'remove').mockResolvedValue(undefined);
   });

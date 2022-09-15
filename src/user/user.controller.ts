@@ -49,7 +49,7 @@ export class UserController {
   constructor(
     @Inject(forwardRef(() => UserService)) private userService: UserService,
     @Inject(forwardRef(() => TravelService)) private travelService: TravelService,
-    @Inject(forwardRef(() => FriendshipService)) private friendService: FriendshipService,
+    @Inject(forwardRef(() => FriendshipService)) private friendshipService: FriendshipService,
   ) {}
 
   @Post('/')
@@ -69,7 +69,7 @@ export class UserController {
 
   @Get('/:id/index')
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
-  async getIndex(
+  async getUserIndex(
     @Param('id') id: string,
     @Query() query: FindIndexQueryDto,
   ): Promise<GetUserIndexResponse> {
@@ -82,7 +82,7 @@ export class UserController {
     @Param('id') id: string,
     @Query() query: SearchFriendsQueryDto,
   ): Promise<GetUserSearchResponse> {
-    return this.friendService.searchNewFriends(id, query);
+    return this.friendshipService.searchNewFriends(id, query);
   }
 
   @Delete('/:id')
@@ -129,20 +129,20 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('photo'))
   async createTravel(
+    @Param('id') id: string,
     @Body() createTravelDto: CreateTravelDto,
     @UploadedFile() file: Express.Multer.File,
-    @Param('id') id: string,
   ): Promise<CreateTravelResponse> {
     return this.travelService.create(id, createTravelDto, file);
   }
 
   @Post('/:id/friend')
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
-  async createFriendship(
-    @Body() createFriendDto: CreateFriendDto,
+  async inviteFriend(
     @Param('id') id: string,
+    @Body() createFriendDto: CreateFriendDto,
   ): Promise<CreateFriendshipResponse> {
-    return this.friendService.invite(id, createFriendDto);
+    return this.friendshipService.invite(id, createFriendDto);
   }
 
   @Get('/:id/friend')
@@ -151,6 +151,6 @@ export class UserController {
     @Param('id') id: string,
     @Query() query: FindFriendsQueryDto,
   ): Promise<GetFriendshipsResponse> {
-    return this.friendService.findAllByUserId(id, query);
+    return this.friendshipService.findAllByUserId(id, query);
   }
 }
