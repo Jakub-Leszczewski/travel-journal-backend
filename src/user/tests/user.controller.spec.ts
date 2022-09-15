@@ -37,18 +37,18 @@ describe('UserController', () => {
         if (token === UserService) {
           return {
             create: jest.fn(async (body, file) => ({ body, file, result: createResult })),
-            findOne: jest.fn((id) => ({ id, result: findOneResult })),
-            getUserIndex: jest.fn((id, query) => ({ id, query, result: getIndexResult })),
-            remove: jest.fn((id) => ({ id, result: removeResult })),
-            update: jest.fn((id, body, file) => ({ id, body, file, result: updateResult })),
-            getStats: jest.fn((id) => ({ id, result: getStatsResult })),
-            getPhoto: jest.fn((id) => ({ id, result: getPhotoResult })),
-            createFriendship: jest.fn((id, body) => ({
+            findOne: jest.fn(async (id) => ({ id, result: findOneResult })),
+            getUserIndex: jest.fn(async (id, query) => ({ id, query, result: getIndexResult })),
+            remove: jest.fn(async (id) => ({ id, result: removeResult })),
+            update: jest.fn(async (id, body, file) => ({ id, body, file, result: updateResult })),
+            getStats: jest.fn(async (id) => ({ id, result: getStatsResult })),
+            getPhoto: jest.fn(async (id) => ({ id, result: getPhotoResult })),
+            createFriendship: jest.fn(async (id, body) => ({
               id,
               body,
               result: inviteFriendResult,
             })),
-            getAllFriendshipByUserId: jest.fn((id, query) => ({
+            getAllFriendshipByUserId: jest.fn(async (id, query) => ({
               id,
               query,
               result: getAllFriendshipByUserIdResult,
@@ -58,8 +58,12 @@ describe('UserController', () => {
 
         if (token === TravelService) {
           return {
-            findAllByUserId: jest.fn((id, query) => ({ id, query, result: findAllTravelResult })),
-            create: jest.fn((id, body, file) => ({
+            findAllByUserId: jest.fn(async (id, query) => ({
+              id,
+              query,
+              result: findAllTravelResult,
+            })),
+            create: jest.fn(async (id, body, file) => ({
               id,
               body,
               file,
@@ -70,17 +74,17 @@ describe('UserController', () => {
 
         if (token === FriendshipService) {
           return {
-            searchNewFriends: jest.fn((id, query) => ({
+            searchNewFriends: jest.fn(async (id, query) => ({
               id,
               query,
               result: searchNewFriendsResult,
             })),
-            invite: jest.fn((id, body) => ({
+            invite: jest.fn(async (id, body) => ({
               id,
               body,
               result: inviteFriendResult,
             })),
-            findAllByUserId: jest.fn((id, query) => ({
+            findAllByUserId: jest.fn(async (id, query) => ({
               id,
               query,
               result: getAllFriendshipByUserIdResult,
