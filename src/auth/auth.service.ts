@@ -8,17 +8,18 @@ import { config } from '../config/config';
 
 import { LoginResponse, LogoutAllResponse, LogoutResponse } from '../types';
 import { UserHelperService } from '../user/user-helper.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(forwardRef(() => UserHelperService))
-    private readonly userHelperService: UserHelperService,
-    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => UserHelperService)) private userHelperService: UserHelperService,
+    @Inject(forwardRef(() => UserService)) private userService: UserService,
+    @Inject(JwtService) private jwtService: JwtService,
   ) {}
 
   async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await User.findOne({ where: { username } });
+    const user = await this.userService.getUser({ username });
 
     if (user) {
       const hashCompareResult = await compare(password, user.hashPwd);

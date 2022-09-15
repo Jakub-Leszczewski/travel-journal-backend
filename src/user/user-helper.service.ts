@@ -5,12 +5,10 @@ import { UserPublicDataInterface, UserSaveResponseData } from '../types';
 @Injectable()
 export class UserHelperService {
   async checkUserFieldUniquenessAndThrow(value: { [key: string]: any }): Promise<void> {
-    const user = await User.findOne({
-      where: value,
-    });
+    const isUniqueness = await this.checkUserFieldUniqueness(value);
 
     const [key] = Object.keys(value);
-    if (user) throw new ConflictException(`${key} is not unique`);
+    if (!isUniqueness) throw new ConflictException(`${key} is not unique`);
   }
 
   async checkUserFieldUniqueness(value: { [key: string]: any }): Promise<boolean> {

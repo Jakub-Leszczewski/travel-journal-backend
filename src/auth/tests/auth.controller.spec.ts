@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { AuthController } from '../auth.controller';
 import { MockFunctionMetadata, ModuleMocker } from 'jest-mock';
-
 const moduleMocker = new ModuleMocker(global);
 
-describe('AuthService', () => {
-  let service: AuthService;
+describe('AuthController', () => {
+  let controller: AuthController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
+      controllers: [AuthController],
     })
       .useMocker((token) => {
         if (typeof token === 'function') {
@@ -20,10 +19,10 @@ describe('AuthService', () => {
       })
       .compile();
 
-    service = module.get<AuthService>(AuthService);
+    controller = module.get<AuthController>(AuthController);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(controller).toBeDefined();
   });
 });

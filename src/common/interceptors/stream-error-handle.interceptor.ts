@@ -6,13 +6,13 @@ import {
   NotFoundException,
   StreamableFile,
 } from '@nestjs/common';
-import { catchError, map, Observable, tap } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Response } from 'express';
 import { ReadStream } from 'fs';
 
 @Injectable()
 export class StreamErrorHandleInterceptor implements NestInterceptor {
-  async intercept(context: ExecutionContext, next: CallHandler<any>): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const res = context.switchToHttp().getResponse() as Response;
 
     return next.handle().pipe(

@@ -10,8 +10,8 @@ import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    PassportModule,
     forwardRef(() => UserModule),
+    PassportModule,
     JwtModule.register({
       secret: config.jwtSecret,
       signOptions: { expiresIn: config.jwtTimeToExpire },

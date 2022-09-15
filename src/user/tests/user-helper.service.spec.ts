@@ -79,7 +79,7 @@ describe('UserHelperService', () => {
   });
 
   it('checkUserFieldUniquenessAndThrow should throw error', () => {
-    jest.spyOn(User, 'findOne').mockResolvedValue(userDataMock);
+    jest.spyOn(UserHelperService.prototype, 'checkUserFieldUniqueness').mockResolvedValue(false);
 
     expect(
       async () => await service.checkUserFieldUniquenessAndThrow({ email: 'abc@xyz.pl' }),
@@ -87,7 +87,7 @@ describe('UserHelperService', () => {
   });
 
   it("checkUserFieldUniquenessAndThrow shouldn't throw error", async () => {
-    jest.spyOn(User, 'findOne').mockResolvedValue(null);
+    jest.spyOn(UserHelperService.prototype, 'checkUserFieldUniqueness').mockResolvedValue(true);
 
     await expect(
       service.checkUserFieldUniquenessAndThrow({ email: 'abc@xyz.pl' }),
