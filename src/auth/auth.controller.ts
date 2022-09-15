@@ -34,8 +34,8 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @HttpCode(200)
   async login(
-    @Res({ passthrough: true }) res: Response,
     @UserObj() user: User,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponse> {
     return this.authService.login(user, res);
   }

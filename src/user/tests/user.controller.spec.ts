@@ -17,6 +17,10 @@ describe('UserController', () => {
       providers: [UserService],
     })
       .useMocker((token) => {
+        if (token === UserService) {
+          return {};
+        }
+
         if (typeof token === 'function') {
           const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
