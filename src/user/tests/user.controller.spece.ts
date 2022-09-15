@@ -23,7 +23,6 @@ const getAllFriendshipByUserIdResult = 'getAllFriendshipByUserId';
 
 const userId = uuid();
 const fileMock: any = { multer: true };
-const resMock: any = { res: true };
 const bodyMock: any = { body: true };
 const queryMock: any = { query: true };
 

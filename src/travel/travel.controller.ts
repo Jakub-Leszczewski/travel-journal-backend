@@ -76,8 +76,8 @@ export class TravelController {
   @UseGuards(TravelOwnerGuard)
   @UseInterceptors(FileInterceptor('photo'))
   async createPost(
-    @Body() createPostDto: CreatePostDto,
     @Param('id') id: string,
+    @Body() createPostDto: CreatePostDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<CreatePostResponse> {
     return this.postService.create(id, createPostDto, file);
