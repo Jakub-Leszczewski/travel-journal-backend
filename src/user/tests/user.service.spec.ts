@@ -17,7 +17,7 @@ import { TravelService } from '../../travel/travel.service';
 import { v4 as uuid } from 'uuid';
 
 const moduleMocker = new ModuleMocker(global);
-let removeFromTmpMock = jest.fn(async () => undefined);
+
 const userId = uuid();
 const multerFileMock: any = { filename: `${userId}.png` };
 const newUserDtoMock: any = { username: 'xyz', email: 'xyz', password: 'abc' };
@@ -25,6 +25,10 @@ const newPasswordDtoMock: any = { password: 'Password1234', newPassword: 'Passwo
 const userMock = new User();
 const postArrAmount = 20;
 const postsArr = [{ user: { id: userId } }, { user: { id: userId } }, { user: { id: userId } }];
+
+let userSaveMock = jest.fn(async () => undefined);
+let userRemoveMock = jest.fn(async () => undefined);
+let removeFromTmpMock = jest.fn(async () => undefined);
 
 describe('UserService', () => {
   let service: UserService;
@@ -103,13 +107,15 @@ describe('UserService', () => {
     userMock.hashPwd = '$2a$13$Iwf5vi4HLT8GMHysIbbEH.DjVgeC/8O.VJj/o0gJtqB2S9tKhvnP6'; // Password1234
 
     removeFromTmpMock = jest.fn(async () => undefined);
+    userSaveMock = jest.fn(async () => undefined);
+    userRemoveMock = jest.fn(async () => undefined);
 
     jest.spyOn(FileManagementUser, 'removeUserPhoto').mockResolvedValue(undefined);
     jest.spyOn(FileManagementUser, 'saveUserPhoto').mockResolvedValue({ filename: 'xyz' } as any);
     jest.spyOn(FileManagementUser, 'removeFromTmp').mockImplementation(removeFromTmpMock);
     jest.spyOn(FileManagementUser, 'removeUserDir').mockResolvedValue(undefined);
-    jest.spyOn(User.prototype, 'save').mockResolvedValue(undefined);
-    jest.spyOn(User.prototype, 'remove').mockResolvedValue(undefined);
+    jest.spyOn(User.prototype, 'save').mockImplementation(userSaveMock);
+    jest.spyOn(User.prototype, 'remove').mockImplementation(userRemoveMock);
   });
 
   it('should be defined', async () => {
@@ -152,10 +158,7 @@ describe('UserService', () => {
   });
 
   it('findOne - should return data', async () => {
-    jest.spyOn(UserService.prototype, 'getUser').mockImplementation(async (where: any) => {
-      userMock.id = where.id;
-      return userMock;
-    });
+    jest.spyOn(UserService.prototype, 'getUser').mockResolvedValue(userMock);
     const result = await service.findOne(userId);
 
     expect(result).toBeDefined();
@@ -203,6 +206,17 @@ describe('UserService', () => {
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
+  it('create - should save record in database', async () => {
+    jest.spyOn(UserService.prototype, 'getUser').mockImplementation(async (where: any) => {
+      userMock.id = where.id;
+      return userMock;
+    });
+
+    await service.create(newUserDtoMock, multerFileMock);
+
+    expect(userSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('update - should throw bad request error if id is empty', async () => {
     await expect(async () => service.update('', {} as any, multerFileMock)).rejects.toThrowError(
       BadRequestException,
@@ -237,10 +251,7 @@ describe('UserService', () => {
   });
 
   it('update - should change bio', async () => {
-    jest.spyOn(UserService.prototype, 'getUser').mockImplementation(async (where: any) => {
-      userMock.id = where.id;
-      return userMock;
-    });
+    jest.spyOn(UserService.prototype, 'getUser').mockResolvedValue(userMock);
 
     const newData: any = { bio: 'new' };
     const result = await service.update(userId, newData, multerFileMock);
@@ -299,6 +310,14 @@ describe('UserService', () => {
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
+  it('update - should save record in database', async () => {
+    jest.spyOn(UserService.prototype, 'getUser').mockResolvedValue(userMock);
+
+    await service.update(userId, newUserDtoMock, multerFileMock);
+
+    expect(userSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('remove - should throw bad request error if id is empty', async () => {
     await expect(async () => service.remove('')).rejects.toThrowError(BadRequestException);
   });
@@ -314,6 +333,14 @@ describe('UserService', () => {
     const result = await service.remove(userId);
 
     expect(result).toBeDefined();
+  });
+
+  it('remove - shouldn remove record from database', async () => {
+    jest.spyOn(UserService.prototype, 'getUser').mockResolvedValue(userMock);
+
+    await service.remove(userId);
+
+    expect(userRemoveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('getStats - should throw bad request error if id is empty', async () => {

@@ -9,11 +9,15 @@ import { User } from '../../user/entities/user.entity';
 import { FriendshipStatus } from '../../types';
 import { UserHelperService } from '../../user/user-helper.service';
 import { v4 as uuid } from 'uuid';
+import { Post } from '../../post/entities/post.entity';
+
+const moduleMocker = new ModuleMocker(global);
 
 const userId = uuid();
 const friendId = uuid();
 const friendshipId = uuid();
 const friendshipRevertId = uuid();
+
 const findAllQueryMock = { page: 2, status: [] };
 const userMock = new User();
 const friendMock = new User();
@@ -23,7 +27,8 @@ const friendshipRevertMock = new Friendship();
 const userArrAmount = 20;
 const userArr = [userMock, userMock, userMock];
 
-const moduleMocker = new ModuleMocker(global);
+let friendshipSaveMock = jest.fn(async () => undefined);
+let friendshipRemoveMock = jest.fn(async () => undefined);
 
 describe('FriendService', () => {
   let service: FriendshipService;
@@ -82,10 +87,13 @@ describe('FriendService', () => {
     friendshipRevertMock.friend = userMock;
     friendshipRevertMock.status = FriendshipStatus.Accepted;
 
+    friendshipSaveMock = jest.fn(async () => undefined);
+    friendshipRemoveMock = jest.fn(async () => undefined);
+
     service = module.get<FriendshipService>(FriendshipService);
 
-    jest.spyOn(Friendship.prototype, 'save').mockResolvedValue(undefined);
-    jest.spyOn(Friendship.prototype, 'remove').mockResolvedValue(undefined);
+    jest.spyOn(Friendship.prototype, 'save').mockImplementation(friendshipSaveMock);
+    jest.spyOn(Friendship.prototype, 'remove').mockImplementation(friendshipRemoveMock);
   });
 
   it('should be defined', () => {
@@ -206,6 +214,12 @@ describe('FriendService', () => {
     });
   });
 
+  it('invite - should update record in database', async () => {
+    await service.invite(userId, { friendId });
+
+    expect(friendshipSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('accept - should throw bad request error if empty id', async () => {
     await expect(async () => await service.accept('')).rejects.toThrowError(BadRequestException);
   });
@@ -229,6 +243,17 @@ describe('FriendService', () => {
       friend: { id: friendId },
       status: FriendshipStatus.Accepted,
     });
+  });
+
+  it('accept - should update record in database', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValueOnce({
+      friendship: friendshipMock,
+      friendshipRevert: friendshipRevertMock,
+    });
+
+    await service.accept(friendshipId);
+
+    expect(friendshipSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('remove - should throw bad request error', async () => {
@@ -255,6 +280,17 @@ describe('FriendService', () => {
       friend: { id: friendId },
       status: FriendshipStatus.Accepted,
     });
+  });
+
+  it('remove - should remove record from database', async () => {
+    jest.spyOn(FriendshipService.prototype, 'getFriendshipTwoSides').mockResolvedValueOnce({
+      friendship: friendshipMock,
+      friendshipRevert: friendshipRevertMock,
+    });
+
+    await service.remove(friendshipId);
+
+    expect(friendshipRemoveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('checkFriendshipExist - should throw error if userId is empty', async () => {

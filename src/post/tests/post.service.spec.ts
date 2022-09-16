@@ -31,6 +31,8 @@ const postId = uuid();
 let removeFromTmpMock = jest.fn(async () => undefined);
 let removePostDirMock = jest.fn(async () => undefined);
 let getPostPhotoMock = jest.fn(async () => 'abc');
+let postSaveMock = jest.fn(async () => undefined);
+let postRemoveMock = jest.fn(async () => undefined);
 
 describe('PostService', () => {
   let service: PostService;
@@ -78,6 +80,8 @@ describe('PostService', () => {
     removeFromTmpMock = jest.fn(async () => undefined);
     removePostDirMock = jest.fn(async () => undefined);
     getPostPhotoMock = jest.fn(async () => 'abc');
+    postSaveMock = jest.fn(async () => undefined);
+    postRemoveMock = jest.fn(async () => undefined);
 
     jest.spyOn(FileManagementPost, 'removePostPhoto').mockReturnValue(undefined);
     jest
@@ -86,8 +90,8 @@ describe('PostService', () => {
     jest.spyOn(FileManagementPost, 'removeFromTmp').mockImplementation(removeFromTmpMock);
     jest.spyOn(FileManagementPost, 'removePostPhoto').mockImplementation(removePostDirMock);
     jest.spyOn(FileManagementPost, 'getPostPhoto').mockImplementation(getPostPhotoMock as any);
-    jest.spyOn(Post.prototype, 'save').mockResolvedValue(undefined);
-    jest.spyOn(Post.prototype, 'remove').mockResolvedValue(undefined);
+    jest.spyOn(Post.prototype, 'save').mockImplementation(postSaveMock);
+    jest.spyOn(Post.prototype, 'remove').mockImplementation(postRemoveMock);
   });
 
   it('should be defined', () => {
@@ -121,10 +125,7 @@ describe('PostService', () => {
   });
 
   it('findOne - should return record with given id', async () => {
-    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
-      postMock.id = where.id;
-      return postMock;
-    });
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
     const result = await service.findOne(postId);
 
@@ -192,10 +193,7 @@ describe('PostService', () => {
   });
 
   it('create - should throw not found error if travel empty', async () => {
-    jest.spyOn(Travel, 'findOne').mockImplementation(async () => {
-      travelMock.user = undefined;
-      return travelMock;
-    });
+    jest.spyOn(Travel, 'findOne').mockResolvedValue(null);
 
     await expect(async () => service.create(travelId, newPostData, fileMock)).rejects.toThrowError(
       NotFoundException,
@@ -203,10 +201,7 @@ describe('PostService', () => {
   });
 
   it('create - should return data with given travel id', async () => {
-    jest.spyOn(Travel, 'findOne').mockImplementation(async (options: any) => {
-      travelMock.id = options.where.id;
-      return travelMock;
-    });
+    jest.spyOn(Travel, 'findOne').mockResolvedValue(travelMock);
 
     const { createdAt, ...result } = await service.create(travelId, newPostData, fileMock);
 
@@ -244,6 +239,12 @@ describe('PostService', () => {
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
+  it('create - should update record in database', async () => {
+    await service.create(travelId, newPostData, fileMock);
+
+    expect(postSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('update - should throw bad request error if empty id', async () => {
     await expect(async () => service.update('', {} as any, fileMock)).rejects.toThrowError(
       BadRequestException,
@@ -270,10 +271,7 @@ describe('PostService', () => {
   });
 
   it('update - should throw not found error if user empty', async () => {
-    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async () => {
-      postMock.travel.user = undefined;
-      return postMock;
-    });
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.update(postId, {} as any, fileMock)).rejects.toThrowError(
       NotFoundException,
@@ -281,10 +279,7 @@ describe('PostService', () => {
   });
 
   it('update - should return data with given id', async () => {
-    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
-      postMock.id = where.id;
-      return postMock;
-    });
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
     const newData: any = {
       description: 'new',
@@ -328,11 +323,17 @@ describe('PostService', () => {
     expect(removeFromTmpMock.mock.calls.length).toBe(0);
   });
 
+  it('update - should update record in database', async () => {
+    await service.update(postId, newPostData, fileMock);
+
+    expect(postSaveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('remove - should throw bad request error if id is empty', async () => {
     await expect(async () => service.remove('')).rejects.toThrowError(BadRequestException);
   });
 
-  it('remove - should throw not found error if travel is empty', async () => {
+  it('remove - should throw not found error if post is empty', async () => {
     jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(null);
 
     await expect(async () => service.remove(postId)).rejects.toThrowError(NotFoundException);
@@ -348,26 +349,26 @@ describe('PostService', () => {
   });
 
   it('remove - should return data with given id', async () => {
-    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
-      postMock.id = where.id;
-      return postMock;
-    });
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
-    const result = await service.remove(travelId);
+    const result = await service.remove(postId);
 
     expect(result).toBeDefined();
-    expect(result.id).toBe(travelId);
+    expect(result.id).toBe(postId);
   });
 
   it('remove - should remove travel dir', async () => {
-    jest.spyOn(PostService.prototype, 'getPost').mockImplementation(async (where: any) => {
-      postMock.id = where.id;
-      return postMock;
-    });
+    jest.spyOn(PostService.prototype, 'getPost').mockResolvedValue(postMock);
 
     await service.remove(travelId);
 
     expect(removePostDirMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('create - should remove record from database', async () => {
+    await service.remove(postId);
+
+    expect(postRemoveMock.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('getPhoto - should throw bad request error if id is empty', async () => {
