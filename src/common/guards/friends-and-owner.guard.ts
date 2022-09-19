@@ -37,7 +37,7 @@ export class FriendsAndOwnerGuard implements CanActivate {
       relations: ['friend'],
     });
     if (!friendship && user.id !== ownerId) throw new NotFoundException();
-    //@TODO zamienić we wszystki ^
+
     return user.id === ownerId || user.id === friendship.friend.id;
   }
 }

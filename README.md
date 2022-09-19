@@ -66,10 +66,10 @@
       <a href="#endpoints">Endpoints</a>
       <ul>
         <li><a href="#auth">Autoryzacja</a></li>
-        <li><a href="#admin">Admin</a></li>
-        <li><a href="#hr">Hr</a></li>
-        <li><a href="#student">Kursant</a></li>
         <li><a href="#user">Użytkownik</a></li>
+        <li><a href="#travel">Podróż</a></li>
+        <li><a href="#post">Post</a></li>
+        <li><a href="#friendship">Przyjaciele</a></li>
       </ul>
     </li>
   </ol>
@@ -249,10 +249,64 @@ Aplikacja pozwala na stworzenie własnego dziennika podróży i podzielenia się
         friendId: string
       }
     ```
+  <p align="right">(<a href="#top">back to top</a>)</p>
 
+### Travel
+
+* **GET /api/travel/:id** - Pobiera konkretną podróż
+* **PATCH /api/travel/:id** - Aktualizuje podróż
+    ```ts
+      // dto dla body
+      {
+        title?: string;
+        description?: string;
+        destination?: string;
+        comradesCount?: number;
+        startAt?: string(Date);
+        endAt?: string(Date);
+        photo?: (Zdjęcie);
+      }
+    ```
+* **DELETE /api/travel/:id** - Usuwa daną podróż
+* **GET /api/travel/photo/:id** - Pobiera zdjęcie danej podróży
+* **GET /api/travel/:id/post** - Pobiera wszystkie posty dla danej podróży 
+* **POST /api/travel/:id/post** - Dodaje nowy post do danej podróży
+    ```ts
+      // dto dla body
+      {
+        title: string;
+        destination: string;
+        description: string;
+        photo?: (Zdjęcie);
+      }
+    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+### Post
+
+* **GET /api/post/:id** - Pobiera dany post
+* **PATCH /api/post/:id** - Aktualizuje dany post
+    ```ts
+      // dto dla body
+      {
+        title?: string;
+        destination?: string;
+        description?: string;
+        photo?: (Zdjęcie);
+      }
+    ```
+* **DELETE /api/post/:id** - Usuwa dany post
+* **GET /api/post/photo/:id** - Pobiera zdjęcie danego postu
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+### Friendship
+
+* **PATCH /api/friendship/:id** - Akceptuje daną znajomość
+* **DELETE /api/friendship/:id** - Usuwa daną znajomość
+
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->

@@ -1,4 +1,5 @@
 import { IsEmail, IsString, Length, Matches } from 'class-validator';
+import { password } from '../../common/constant/regEx';
 
 export class PutUserDto {
   @IsString()
@@ -26,7 +27,7 @@ export class PutUserDto {
 
   @IsString()
   @Length(8, 36)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/)
+  @Matches(password)
   public newPassword: string;
 
   public photo: any;

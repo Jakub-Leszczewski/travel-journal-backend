@@ -4,7 +4,7 @@ export interface CreateUserDtoInterface {
   username: string;
   email: string;
   password: string;
-  photo: any;
+  photo?: any;
 }
 
 export interface UpdateUserDtoInterface {
