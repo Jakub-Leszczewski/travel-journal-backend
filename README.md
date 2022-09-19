@@ -60,6 +60,7 @@
       <ul>
         <li><a href="#warunki-wstepne">Warunki wstępne</a></li>
         <li><a href="#instalacja">Instalacja</a></li>
+        <li><a href="#testowanie">Instalacja</a></li>
       </ul>
     </li>
     <li>
@@ -155,6 +156,11 @@ Aplikacja pozwala na stworzenie własnego dziennika podróży i podzielenia się
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+
+### Testowanie
+   ```sh
+   yarn test
+   ```
 
 
 <!-- USAGE EXAMPLES -->
