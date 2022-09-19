@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { IsString, Length, Matches } from 'class-validator';
 import { PutUserDto } from './put-user.dto';
-import { UpdateUserDtoInterface } from '../../types/user/user.dto';
+import { UpdateUserDtoInterface } from '../../types';
 
 export class UpdateUserDto extends PartialType(PutUserDto) implements UpdateUserDtoInterface {
   @IsString()

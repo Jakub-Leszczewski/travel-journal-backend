@@ -1,5 +1,5 @@
 import { IsEmail, IsString, Length, Matches } from 'class-validator';
-import { CreateUserDtoInterface } from '../../types/user/user.dto';
+import { CreateUserDtoInterface } from '../../types';
 
 export class CreateUserDto implements CreateUserDtoInterface {
   @IsString()
@@ -22,4 +22,6 @@ export class CreateUserDto implements CreateUserDtoInterface {
   @Length(8, 36)
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/)
   public password: string;
+
+  public photo: any;
 }
