@@ -36,9 +36,9 @@
     <a href="https://travelbook.networkmanager.info/">Demo</a><br>
     <a href="https://github.com/ezterr/travel-journal-frontend">frontend-repo</a>
 
-<b>Username:</b> tester
+<b>Username:</b> janko
 <br>
-<b>Password:</b> Test1234
+<b>Password:</b> Testowehaslo123
   </p>
   </p>
 </div>
