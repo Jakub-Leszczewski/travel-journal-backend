@@ -8,6 +8,6 @@ export class SearchFriendsQueryDto implements searchNewFriendshipsDtoInterface {
   public page: number = 1;
 
   @IsString()
-  @Length(1, 64)
+  @Length(0, 64)
   public search: string;
 }

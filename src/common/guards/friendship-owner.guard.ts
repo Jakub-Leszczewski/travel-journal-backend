@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { User } from '../../user/entities/user.entity';
@@ -31,6 +32,7 @@ export class FriendshipOwnerGuard implements CanActivate {
       where: { id: friendshipId },
       relations: ['user'],
     });
+    if (!friendship) throw new NotFoundException();
 
     return user.id === friendship.user.id;
   }

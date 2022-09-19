@@ -1,8 +1,9 @@
 import { FindFriendshipsQueryDtoInterface, FriendshipStatus } from '../../types';
-import { IsEnum, IsInt, Min } from 'class-validator';
+import { IsInt, Min } from 'class-validator';
+import { IsEnumArray } from '../../common/decorators/validation';
 
 export class FindFriendsQueryDto implements FindFriendshipsQueryDtoInterface {
-  @IsEnum(FriendshipStatus, { each: true })
+  @IsEnumArray(FriendshipStatus)
   public status: FriendshipStatus[] = [
     FriendshipStatus.Accepted,
     FriendshipStatus.Waiting,

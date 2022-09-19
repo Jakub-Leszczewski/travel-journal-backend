@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   BadRequestException,
   Inject,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { User } from '../../user/entities/user.entity';
@@ -28,13 +29,15 @@ export class FriendsAndOwnerGuard implements CanActivate {
     if (!ownerId) throw new BadRequestException();
     if (!user) throw new Error('User is undefined');
 
-    const friend = await Friendship.findOne({
+    const friendship = await Friendship.findOne({
       where: {
         user: { id: ownerId },
         status: FriendshipStatus.Accepted,
       },
+      relations: ['friend'],
     });
-
-    return user.id === ownerId || user.id === friend.friend.id;
+    if (!friendship && user.id !== ownerId) throw new NotFoundException();
+    //@TODO zamienić we wszystki ^
+    return user.id === ownerId || user.id === friendship.friend.id;
   }
 }

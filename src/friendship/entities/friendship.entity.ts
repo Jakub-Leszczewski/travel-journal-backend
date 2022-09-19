@@ -7,6 +7,12 @@ export class Friendship extends BaseEntity implements FriendshipInterface {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
+  @Column({
+    type: 'enum',
+    enum: FriendshipStatus,
+  })
+  public status: FriendshipStatus;
+
   @ManyToOne((type) => User, (user) => user.friends, {
     onDelete: 'CASCADE',
   })
@@ -18,10 +24,4 @@ export class Friendship extends BaseEntity implements FriendshipInterface {
   })
   @JoinTable()
   public friend: User;
-
-  @Column({
-    type: 'enum',
-    enum: FriendshipStatus,
-  })
-  public status: FriendshipStatus;
 }

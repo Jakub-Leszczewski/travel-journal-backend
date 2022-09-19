@@ -38,14 +38,15 @@ export class TravelFriendsAndOwnerGuard implements CanActivate {
 
     if (!travelSimple) throw new NotFoundException();
 
-    const friend = await Friendship.findOne({
+    const friendship = await Friendship.findOne({
       where: {
         user: { id: travelSimple.user.id },
         status: FriendshipStatus.Accepted,
       },
       relations: ['friend'],
     });
+    if (!friendship && user.id !== travelSimple.user.id) throw new NotFoundException();
 
-    return travelSimple.user.id === user.id || friend.friend.id === user.id;
+    return travelSimple.user.id === user.id || friendship.friend.id === user.id;
   }
 }

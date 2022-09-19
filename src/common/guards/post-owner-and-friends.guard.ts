@@ -17,7 +17,7 @@ import { FriendshipStatus } from '../../types';
  *
  * **req.param.id** --> post's id
  * */
-export class PostFriendsAndOwnerGuard implements CanActivate {
+export class PostOwnerAndFriendsGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -39,14 +39,15 @@ export class PostFriendsAndOwnerGuard implements CanActivate {
 
     if (!postSimple) throw new NotFoundException();
 
-    const friend = await Friendship.findOne({
+    const friendship = await Friendship.findOne({
       where: {
         user: { id: postSimple.travel.user.id },
         status: FriendshipStatus.Accepted,
       },
       relations: ['friend'],
     });
+    if (!friendship && user.id !== postSimple.travel.user.id) throw new NotFoundException();
 
-    return postSimple.travel.user.id === user.id || user.id === friend?.friend.id;
+    return postSimple.travel.user.id === user.id || user.id === friendship?.friend.id;
   }
 }

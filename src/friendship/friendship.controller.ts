@@ -3,6 +3,7 @@ import { FriendshipService } from './friendship.service';
 import { DeleteFriendshipResponse, UpdateFriendshipResponse } from '../types';
 import { FriendshipOnlyInvitedGuard } from '../common/guards/friendship-only-invited.guard';
 import { FriendshipOwnerGuard } from '../common/guards/friendship-owner.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('/friendship')
 export class FriendshipController {
@@ -11,13 +12,13 @@ export class FriendshipController {
   ) {}
 
   @Patch('/:id')
-  @UseGuards(FriendshipOnlyInvitedGuard)
+  @UseGuards(JwtAuthGuard, FriendshipOnlyInvitedGuard)
   accept(@Param('id') id: string): Promise<UpdateFriendshipResponse> {
     return this.friendService.accept(id);
   }
 
   @Delete('/:id')
-  @UseGuards(FriendshipOwnerGuard)
+  @UseGuards(JwtAuthGuard, FriendshipOwnerGuard)
   remove(@Param('id') id: string): Promise<DeleteFriendshipResponse> {
     return this.friendService.remove(id);
   }

@@ -136,7 +136,7 @@ export class UserController {
     return this.travelService.create(id, createTravelDto, file);
   }
 
-  @Post('/:id/friend')
+  @Post('/:id/friendship')
   @UseGuards(JwtAuthGuard, UserOwnerGuard)
   async inviteFriend(
     @Param('id') id: string,
