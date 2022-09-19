@@ -1,4 +1,5 @@
-import { UserIndexSaveData, UserPublicDataInterface, UserSaveResponseData } from './user';
+import { UserPublicDataInterface, UserSaveResponseData } from './user';
+import { ForeignPostSaveData } from '../post';
 
 export type GetUserSearchResponse = {
   users: UserPublicDataInterface[];
@@ -11,7 +12,7 @@ export type UpdateUserResponse = UserSaveResponseData;
 export type DeleteUserResponse = UserSaveResponseData;
 
 export type GetUserIndexResponse = {
-  posts: UserIndexSaveData[];
+  posts: ForeignPostSaveData[];
   totalPages: number;
   totalPostsCount: number;
 };

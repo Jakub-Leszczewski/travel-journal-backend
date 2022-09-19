@@ -11,3 +11,7 @@ export interface UpdatePostDtoInterface {
   description: string;
   photo: any;
 }
+
+export interface FindPostsQueryDtoInterface {
+  page: number;
+}

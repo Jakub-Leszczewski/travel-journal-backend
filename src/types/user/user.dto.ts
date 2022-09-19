@@ -4,6 +4,7 @@ export interface CreateUserDtoInterface {
   username: string;
   email: string;
   password: string;
+  photo?: any;
 }
 
 export interface UpdateUserDtoInterface {
@@ -13,4 +14,8 @@ export interface UpdateUserDtoInterface {
   password: string;
   newPassword: string;
   photo: any;
+}
+
+export interface FindIndexQueryDtoInterface {
+  page: number;
 }

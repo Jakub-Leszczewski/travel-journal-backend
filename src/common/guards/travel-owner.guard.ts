@@ -6,10 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { User } from '../../models/user/entities/user.entity';
-import { Travel } from '../../models/travel/entities/travel.entity';
+import { User } from '../../user/entities/user.entity';
+import { Travel } from '../../travel/entities/travel.entity';
 import { DataSource } from 'typeorm';
 
+/**
+ * Allows only if authenticated user is travel's owner
+ *
+ * **req.param.id** --> travel's id
+ * */
 export class TravelOwnerGuard implements CanActivate {
   constructor(@Inject(DataSource) private readonly dataSource: DataSource) {}
 

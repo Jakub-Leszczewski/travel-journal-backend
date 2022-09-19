@@ -12,7 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { User as User } from '../models/user/entities/user.entity';
+import { User as User } from '../user/entities/user.entity';
 import { UserObj } from '../common/decorators/user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import {
@@ -21,23 +21,21 @@ import {
   LogoutAllResponse,
   LogoutResponse,
 } from '../types';
-import { UserService } from '../models/user/user.service';
-import { UserGetService } from '../models/user/user-get.service';
+import { UserService } from '../user/user.service';
 
-@Controller('/api/auth')
+@Controller('/auth')
 export class AuthController {
   constructor(
     @Inject(forwardRef(() => AuthService)) private authService: AuthService,
     @Inject(forwardRef(() => UserService)) private userService: UserService,
-    @Inject(forwardRef(() => UserGetService)) private readonly userGetService: UserGetService,
   ) {}
 
   @Post('/login')
   @UseGuards(AuthGuard('local'))
   @HttpCode(200)
   async login(
-    @Res({ passthrough: true }) res: Response,
     @UserObj() user: User,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponse> {
     return this.authService.login(user, res);
   }
@@ -60,6 +58,6 @@ export class AuthController {
   @Get('/user')
   @UseGuards(JwtAuthGuard)
   async getAuthUser(@UserObj() user: User): Promise<GetUserFromTokenResponse> {
-    return this.userGetService.findOne(user.id);
+    return this.userService.findOne(user.id);
   }
 }

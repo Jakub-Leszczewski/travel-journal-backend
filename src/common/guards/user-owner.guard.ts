@@ -1,7 +1,12 @@
 import { Injectable, CanActivate, ExecutionContext, BadRequestException } from '@nestjs/common';
 import { Request } from 'express';
-import { User } from '../../models/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 
+/**
+ * Allows only if authenticated user is user's owner
+ *
+ * **req.param.id** --> user's id
+ * */
 @Injectable()
 export class UserOwnerGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
