@@ -60,7 +60,7 @@
       <ul>
         <li><a href="#warunki-wstepne">Warunki wstępne</a></li>
         <li><a href="#instalacja">Instalacja</a></li>
-        <li><a href="#testowanie">Instalacja</a></li>
+        <li><a href="#testowanie">Testowanie</a></li>
       </ul>
     </li>
     <li>
